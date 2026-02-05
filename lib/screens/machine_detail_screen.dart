@@ -10,6 +10,7 @@ import '../services/maintenance_calculator.dart';
 import '../widgets/status_indicator.dart';
 import '../utils/app_theme.dart';
 import '../utils/constants.dart';
+import 'maintenance_intervals_screen.dart';
 
 class MachineDetailScreen extends StatefulWidget {
   final int machineId;
@@ -336,9 +337,26 @@ class _MachineDetailScreenState extends State<MachineDetailScreen> {
                 'Maintenance Status',
                 style: Theme.of(context).textTheme.displaySmall,
               ),
-              TextButton(
-                onPressed: _showAllStatuses,
-                child: const Text('View All'),
+              Row(
+                children: [
+                  TextButton(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => MaintenanceIntervalsScreen(
+                            machine: _machine!,
+                          ),
+                        ),
+                      ).then((_) => _loadData());
+                    },
+                    child: const Text('Configure'),
+                  ),
+                  TextButton(
+                    onPressed: _showAllStatuses,
+                    child: const Text('View All'),
+                  ),
+                ],
               ),
             ],
           ),
