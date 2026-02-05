@@ -88,21 +88,32 @@
 
 ## Next Steps 🚀
 
-### Phase 3: Polish & Refinement (Current Phase)
-1. **Enhanced UX** 🔄 IN PROGRESS
+### Phase 3: Polish & Refinement
+1. **Enhanced UX**
    - Pull-to-refresh on lists
    - Search/filter machines on home screen
    - Sort options (by name, brand, status)
    - Export maintenance history to CSV/PDF
    - Machine statistics dashboard
 
-2. **Optional Features**
-   - Maintenance reminders/notifications
+2. **Notification Enhancements**
+   - Tap notification to navigate to machine detail
+   - User settings for notification preferences
+   - Snooze functionality
+   - Daily summary notifications
+
+3. **Optional Features**
    - Cost tracking per maintenance
    - Service provider contacts
    - Document attachments (receipts, manuals)
+   - Backup/restore functionality
 
 ### Phase 4: Testing & Deployment
+- Complete testing on physical devices
+- Verify notification delivery
+- Test permission flows
+- Build signed APK for production
+- Jenkins CI/CD verification
 1. **Maintenance History Screen**
    - List of past maintenance
    - Add new maintenance record
