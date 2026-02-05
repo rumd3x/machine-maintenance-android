@@ -61,9 +61,15 @@
   - Image display with fallback
   - Machine info (name, brand, model)
   - Odometer and tank capacity
-- ✅ Placeholder screens:
-  - `AddMachineScreen`
-  - `MachineDetailScreen`
+- ✅ `AddMachineScreen` - Complete form to add machines
+  - Image picker (camera/gallery)
+  - Machine type selector (chips)
+  - All required fields (brand, model, odometer)
+  - All optional fields (nickname, year, serial, spark plug, oil, tank)
+  - Smart odometer unit selection based on machine type
+  - Form validation
+  - Save to database with loading state
+- ✅ Placeholder: `MachineDetailScreen`
 
 ### 8. Documentation
 - ✅ All requirements documented in `.github/copilot-instructions/`
@@ -71,22 +77,19 @@
 
 ## Next Steps 🚀
 
-### Phase 1: Forms & Detail Views (Current Phase)
-1. **Add Machine Form** 🔄 IN PROGRESS
-   - Complete form with all fields
-   - Image picker integration
-   - Form validation
-   - Save to database
-
-2. **Machine Detail Screen**
+### Phase 1: Detail View & Status (Current Phase)
+1. **Machine Detail Screen** 🔄 IN PROGRESS
    - Display full machine information
-   - Status indicators (circular progress)
-   - Recent activity list
+   - Hero image
+   - Status indicators (circular progress like reference)
+   - Recent maintenance activity list
+   - Update odometer button
+   - Add maintenance button
    - Edit/delete options
 
-3. **Update Odometer**
-   - Dialog or screen to update km/hours
-   - Update machine record
+2. **Maintenance Status Calculator**
+   - Business logic to determine status (optimal/warning/overdue)
+   - Calculate based on intervals and current odometer
 
 ### Phase 2: Maintenance Features
 1. **Maintenance History Screen**
