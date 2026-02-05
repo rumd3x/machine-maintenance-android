@@ -51,25 +51,20 @@
 - ✅ Constants file with maintenance types
 - ✅ State management provider (`MachineProvider`)
 
-### 7. Initial Screens
+### 7. Screens Complete
 - ✅ `HomeScreen` - Dashboard with machine list
-  - Welcome header
-  - Empty state
-  - Machine list view
-  - Floating action button
 - ✅ `MachineCard` widget - Machine display card
-  - Image display with fallback
-  - Machine info (name, brand, model)
-  - Odometer and tank capacity
-- ✅ `AddMachineScreen` - Complete form to add machines
-  - Image picker (camera/gallery)
-  - Machine type selector (chips)
-  - All required fields (brand, model, odometer)
-  - All optional fields (nickname, year, serial, spark plug, oil, tank)
-  - Smart odometer unit selection based on machine type
-  - Form validation
-  - Save to database with loading state
-- ✅ Placeholder: `MachineDetailScreen`
+- ✅ `AddMachineScreen` - Complete form with image picker
+- ✅ `MachineDetailScreen` - Full machine details view
+  - Hero image with gradient overlay
+  - Comprehensive machine info card
+  - Status indicators (circular progress widgets)
+  - Recent maintenance activity list
+  - Update odometer dialog
+  - Add maintenance dialog
+  - Edit/delete functionality
+  - Time-ago formatting for activities
+- ✅ `StatusIndicator` widget - Circular progress status displays
 
 ### 8. Documentation
 - ✅ All requirements documented in `.github/copilot-instructions/`
