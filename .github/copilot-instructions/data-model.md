@@ -57,9 +57,29 @@
 - `lastServiceDate`: Date (nullable)
 - `lastServiceOdometer`: Float (nullable)
 - `enabled`: Boolean
+- `notificationSent`: Boolean (prevents duplicate notifications for same due status)
+
+### Notification Sent Flag
+The `notificationSent` flag prevents re-notification of the same maintenance due status:
+- Set to `true` when notification is sent for due/overdue maintenance
+- Reset to `false` when maintenance is logged and status returns to optimal
+- Checked before sending notifications to prevent duplicates on app reopens
+
+## Entity: Notification History
+
+### Attributes
+- `id`: Unique identifier
+- `title`: String
+- `body`: String
+- `machineId`: Foreign key to Machine (nullable for system notifications)
+- `createdAt`: DateTime
+- `isRead`: Boolean
 
 ## Storage Strategy
 - **Local SQLite database** for structured data
 - **Local file storage** for images
 - No network/cloud sync
-- Backup strategy: TBD (future consideration)
+- **Backup strategy**: Manual export/import functionality
+  - Export creates timestamped backup files
+  - Import validates and safely replaces current database
+  - Automatic backup created before import

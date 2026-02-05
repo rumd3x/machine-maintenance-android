@@ -69,3 +69,35 @@ Based on last maintenance and intervals, show alerts for:
   - Optimal status (green)
   - Check soon (yellow/warning)
   - Overdue (red)
+### 5. Database Backup and Restore
+
+#### Export Database
+- Manual database backup functionality
+- Exports to user-accessible Downloads folder
+- Timestamped backup files for easy identification
+- Format: `machine_maintenance_backup_YYYY-MM-DDTHH-MM-SS.db`
+
+#### Import Database
+- Restore from previously exported backup
+- Confirmation dialog to prevent accidental data loss
+- Validates file before import
+- Automatic backup of current data before import
+- Supports device migration and data recovery
+
+### 6. About Screen
+
+#### Information Display
+- App version and description
+- Developer credits and website link
+- Feature list
+- Copyright information
+
+#### GitHub Repository Link
+- Direct link to source code repository
+- Opens in external browser
+- Clean, professional styling
+
+#### Data Management
+- Export and Import buttons
+- Loading indicators during operations
+- Success/error feedback messages

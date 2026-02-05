@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/machine.dart';
 import '../models/maintenance_record.dart';
 import '../models/maintenance_interval.dart';
+import '../models/maintenance_status.dart';
 import '../services/database_service.dart';
 import '../services/notification_service.dart';
 import '../services/maintenance_calculator.dart';

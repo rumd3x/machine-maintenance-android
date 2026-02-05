@@ -459,12 +459,14 @@ class DatabaseService {
 
       // Get destination database path
       final dbPath = await getDatabasePath();
+      final currentDb = File(dbPath);
 
       // Backup current database (just in case)
-      final currentDb = File(dbPath);
       if (await currentDb.exists()) {
         final backupPath = '$dbPath.backup';
         await currentDb.copy(backupPath);
+        // Delete current database to ensure clean import
+        await currentDb.delete();
       }
 
       // Copy import file to database location

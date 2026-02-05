@@ -1,5 +1,7 @@
 # GitHub Copilot Instructions
 
+**🚨 CRITICAL**: Before making ANY code changes, read [DOCUMENTATION-MANDATE.md](copilot-instructions/DOCUMENTATION-MANDATE.md). **All code changes MUST be documented immediately.**
+
 ## Project-Specific Guidelines
 
 ### Form Screen Consistency
@@ -105,12 +107,13 @@ import '../utils/constants.dart';
 
 ### Database Structure
 
-**Current Version**: 3
+**Current Version**: 4
 
 #### Version History:
 - **v1**: Initial schema (machines, maintenance_records, maintenance_intervals)
 - **v2**: Added `fuelType` to machines, `fuelAmount` to maintenance_records
 - **v3**: Added `notifications` table
+- **v4**: Added `notificationSent` flag to maintenance_intervals
 
 #### Notifications Table Schema:
 ```sql
@@ -122,6 +125,21 @@ CREATE TABLE notifications(
   createdAt TEXT NOT NULL,
   isRead INTEGER NOT NULL DEFAULT 0,
   FOREIGN KEY (machineId) REFERENCES machines (id) ON DELETE CASCADE
+)
+```
+
+#### Maintenance Intervals Table Schema:
+```sql
+CREATE TABLE maintenance_intervals(
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  machineId INTEGER NOT NULL,
+  maintenanceType TEXT NOT NULL,
+  intervalDistance REAL,
+  intervalDays INTEGER,
+  enabled INTEGER NOT NULL DEFAULT 1,
+  notificationSent INTEGER NOT NULL DEFAULT 0,  -- Prevents duplicate notifications
+  FOREIGN KEY (machineId) REFERENCES machines (id) ON DELETE CASCADE,
+  UNIQUE(machineId, maintenanceType)
 )
 ```
 
@@ -169,11 +187,17 @@ Notifications are checked/scheduled at:
    - **Overdue**: Send immediately + save to history
    - **Check Soon**: Schedule for future + save to history
 
-3. **Reschedule after changes**:
+3. **Notification sent flag**:
+   - Check `notificationSent` flag before sending notifications (prevents duplicates)
+   - Set flag to `true` after sending notification
+   - Reset flag to `false` when maintenance is logged and status returns to optimal
+   - Methods: `resetNotificationSentFlag()`, `resetNotificationFlagsForOkIntervals()`
+
+4. **Reschedule after changes**:
    - Always call `_scheduleNotificationsForMachine()` after updating machine/maintenance data
    - Cancel old notifications before rescheduling to prevent duplicates
 
-4. **Database migrations**:
+5. **Database migrations**:
    - ALWAYS increment version number in `database_service.dart`
    - Add migration logic in `_onUpgrade()` method
    - Test both fresh install (onCreate) and upgrade paths
@@ -208,6 +232,8 @@ Navigator.push(
 - `workmanager: ^0.9.0` - Background task execution
 - `flutter_local_notifications: ^17.0.0` - System notifications
 - `sqflite: ^2.3.0` - Local database
+- `file_picker: ^8.0.0+1` - File selection for database import
+- `path_provider: ^2.1.1` - Access to system directories
 
 ### Android Permissions Required
 
