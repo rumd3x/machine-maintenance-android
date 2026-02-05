@@ -192,48 +192,6 @@ class _AboutScreenState extends State<AboutScreen> {
                 ),
               ),
             ),
-            const SizedBox(height: 12),
-            
-            // GitHub Repository Link
-            InkWell(
-              onTap: _launchGitHub,
-              borderRadius: BorderRadius.circular(8),
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                decoration: BoxDecoration(
-                  color: AppTheme.cardBackground,
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(
-                    color: AppTheme.textSecondary.withAlpha((0.3 * 255).round()),
-                    width: 1,
-                  ),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      Icons.code,
-                      color: AppTheme.textSecondary,
-                      size: 20,
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      'View on GitHub',
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: AppTheme.textSecondary,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                    const SizedBox(width: 4),
-                    Icon(
-                      Icons.open_in_new,
-                      color: AppTheme.textSecondary,
-                      size: 16,
-                    ),
-                  ],
-                ),
-              ),
-            ),
             const SizedBox(height: 48),
             
             // Features List

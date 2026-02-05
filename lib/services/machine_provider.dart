@@ -145,6 +145,53 @@ class MachineProvider with ChangeNotifier {
     }
   }
 
+  /// Delete maintenance record and recalculate maintenance statuses
+  Future<void> deleteMaintenanceRecord(int recordId) async {
+    try {
+      // Get the record before deleting to know which machine it belongs to
+      final db = await _databaseService.database;
+      final List<Map<String, dynamic>> maps = await db.query(
+        'maintenance_records',
+        where: 'id = ?',
+        whereArgs: [recordId],
+      );
+      
+      if (maps.isEmpty) {
+        throw Exception('Maintenance record not found');
+      }
+      
+      final record = MaintenanceRecord.fromMap(maps.first);
+      final machineId = record.machineId;
+      
+      // Delete the record
+      await _databaseService.deleteMaintenanceRecord(recordId);
+      notifyListeners();
+      
+      // Recalculate maintenance statuses and reschedule notifications
+      final machine = getMachine(machineId);
+      if (machine != null) {
+        final intervals = await getMaintenanceIntervals(machineId);
+        final records = await getMaintenanceRecords(machineId);
+        
+        // Calculate all statuses
+        final statuses = await _calculator.calculateAllStatuses(
+          machine: machine,
+          intervals: intervals,
+          records: records,
+        );
+        
+        // Check if any maintenance types are now due (not optimal)
+        // This will trigger notifications for overdue maintenance
+        await _scheduleNotificationsForMachine(machine);
+        
+        debugPrint('Deleted maintenance record $recordId and recalculated statuses');
+      }
+    } catch (e) {
+      debugPrint('Error deleting maintenance record: $e');
+      rethrow;
+    }
+  }
+
   /// Add or update maintenance interval
   Future<void> saveMaintenanceInterval(MaintenanceInterval interval) async {
     try {

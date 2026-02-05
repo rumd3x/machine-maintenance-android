@@ -69,6 +69,14 @@
   - Add custom intervals
   - Delete intervals
 - ✅ `StatusIndicator` widget - Circular progress status displays
+- ✅ `MaintenanceHistoryScreen` - Full maintenance history with delete capability
+  - View all maintenance records for a machine
+  - Display maintenance notes
+  - Delete individual records with confirmation
+  - Automatic recalculation of maintenance statuses after deletion
+  - Formatted dates with relative time (e.g., "2 days ago")
+  - Odometer values at service time
+  - Fuel amounts (when applicable)
 
 ### 8. Maintenance Intelligence System
 - ✅ `MaintenanceCalculator` service - Smart status calculation engine
@@ -211,6 +219,18 @@
 - 🔴 Red (Overdue): Past due
 
 ## Recent Updates (5 de fevereiro de 2026)
+
+### Maintenance History Screen
+- ✅ Created `MaintenanceHistoryScreen` to view all maintenance records
+- ✅ Implemented delete functionality for maintenance records
+- ✅ Added automatic maintenance status recalculation after deletion
+- ✅ Connected "View All" button from machine detail screen to history screen
+- ✅ Display maintenance notes when provided
+- ✅ Show formatted dates with relative time
+- ✅ Confirmation dialog before deleting records
+- ✅ Automatic UI refresh after deletion
+- ✅ Added `deleteMaintenanceRecord()` method to `MachineProvider`
+- ✅ Proper notification rescheduling after record deletion
 
 ### Notification Sent Flag System (Database v4)
 - ✅ Added `notificationSent` column to `maintenance_intervals` table

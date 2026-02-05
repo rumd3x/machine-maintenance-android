@@ -1,6 +1,6 @@
 # Features and Functionality
 
-**Date**: 4 de fevereiro de 2026
+**Date**: 5 de fevereiro de 2026
 
 ## Core Features
 
@@ -69,7 +69,31 @@ Based on last maintenance and intervals, show alerts for:
   - Optimal status (green)
   - Check soon (yellow/warning)
   - Overdue (red)
-### 5. Database Backup and Restore
+
+### 5. Maintenance History
+
+#### Full History View
+- Comprehensive list of all maintenance records for a machine
+- Accessible via "View All" button in machine detail screen
+- Chronologically ordered (newest first)
+
+#### Record Details
+- Maintenance type with appropriate icon
+- Date performed (formatted: "MMM d, y")
+- Time ago relative format (e.g., "2 days ago", "3 weeks ago")
+- Odometer reading at time of service
+- Fuel amount (for fuel maintenance types)
+- Service notes (displayed when provided)
+
+#### Delete Records
+- Delete button on each record
+- Confirmation dialog to prevent accidental deletion
+- Automatic recalculation of maintenance statuses after deletion
+- Automatic rescheduling of notifications after deletion
+- Success/error feedback to user
+- Immediate UI refresh after deletion
+
+### 6. Database Backup and Restore
 
 #### Export Database
 - Manual database backup functionality
@@ -84,7 +108,7 @@ Based on last maintenance and intervals, show alerts for:
 - Automatic backup of current data before import
 - Supports device migration and data recovery
 
-### 6. About Screen
+### 7. About Screen
 
 #### Information Display
 - App version and description

@@ -12,6 +12,7 @@ import '../widgets/status_indicator.dart';
 import '../utils/app_theme.dart';
 import '../utils/constants.dart';
 import 'maintenance_intervals_screen.dart';
+import 'maintenance_history_screen.dart';
 import 'edit_machine_screen.dart';
 
 class MachineDetailScreen extends StatefulWidget {
@@ -153,6 +154,7 @@ class _MachineDetailScreenState extends State<MachineDetailScreen> {
       ),
       floatingActionButton: Column(
         mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.end,
         children: [
           FloatingActionButton(
             heroTag: 'update_odometer',
@@ -537,7 +539,14 @@ class _MachineDetailScreenState extends State<MachineDetailScreen> {
               if (_records.isNotEmpty)
                 TextButton(
                   onPressed: () {
-                    // TODO: Navigate to full maintenance history
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => MaintenanceHistoryScreen(
+                          machine: _machine!,
+                        ),
+                      ),
+                    ).then((_) => _loadData());
                   },
                   child: const Text('View All'),
                 ),

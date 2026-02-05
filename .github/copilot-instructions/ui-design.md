@@ -1,6 +1,6 @@
 # UI/UX Design Reference
 
-**Date**: 4 de fevereiro de 2026
+**Date**: 5 de fevereiro de 2026
 
 ## Design Inspiration
 
@@ -53,3 +53,49 @@ Three circular status indicators with icons:
 - Easy-to-read typography
 - Icon-driven interface
 - Prominent imagery for each machine
+## Implemented Screens
+
+### Maintenance History Screen
+**Purpose**: Display complete maintenance history with delete capability
+
+**Layout**:
+- AppBar with title "Maintenance History"
+- Back button for navigation
+- Full-screen list of maintenance records
+
+**Record Cards**:
+- Leading: Circular avatar with maintenance type icon (colored blue)
+- Title: Maintenance type name (e.g., "Oil Change")
+- Subtitle: 
+  - Date with relative time (e.g., "Feb 5, 2026 • 2 hours ago")
+  - Odometer value with unit (e.g., "5000 km")
+  - Fuel amount if applicable (e.g., "Fuel: 10.5 L")
+- Trailing: Delete icon button (red)
+- Bottom section (if notes present):
+  - Divider line
+  - "Notes" label
+  - Note text content
+
+**Empty State**:
+- Large history icon (gray)
+- "No maintenance records yet" message
+- "Add a maintenance record to get started" subtitle
+- Centered vertically
+
+**Interactions**:
+- Tap delete button → Confirmation dialog
+- Confirm deletion → Delete record, recalculate statuses, show snackbar, refresh list
+- Cancel deletion → No action
+- Back button → Return to machine detail screen with data refresh
+
+**Icons Used**:
+- Oil Change: `Icons.water_drop`
+- Spark Plug: `Icons.electrical_services`
+- Fuel: `Icons.local_gas_station`
+- Filter Cleaning: `Icons.air`
+- Brake Fluid: `Icons.opacity`
+- Coolant: `Icons.ac_unit`
+- Chain Oiling: `Icons.settings`
+- Brake Inspection: `Icons.car_repair`
+- General Service: `Icons.build_circle`
+- Default: `Icons.build`
