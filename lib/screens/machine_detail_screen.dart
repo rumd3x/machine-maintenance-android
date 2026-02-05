@@ -11,6 +11,7 @@ import '../widgets/status_indicator.dart';
 import '../utils/app_theme.dart';
 import '../utils/constants.dart';
 import 'maintenance_intervals_screen.dart';
+import 'edit_machine_screen.dart';
 
 class MachineDetailScreen extends StatefulWidget {
   final int machineId;
@@ -69,6 +70,22 @@ class _MachineDetailScreenState extends State<MachineDetailScreen> {
     }
     
     setState(() => _isLoading = false);
+  }
+
+  Future<void> _editMachine() async {
+    if (_machine == null) return;
+    
+    final result = await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(
+        builder: (context) => EditMachineScreen(machine: _machine!),
+      ),
+    );
+
+    // Refresh if changes were saved
+    if (result == true && mounted) {
+      await _loadData();
+    }
   }
 
   @override
@@ -651,13 +668,6 @@ class _MachineDetailScreenState extends State<MachineDetailScreen> {
         _loadData();
       }
     });
-  }
-
-  void _editMachine() {
-    // TODO: Navigate to edit screen
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Edit feature coming soon')),
-    );
   }
 
   void _deleteMachine() {
