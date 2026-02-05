@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'dart:io';
 import '../models/machine.dart';
@@ -622,6 +623,8 @@ class _MachineDetailScreenState extends State<MachineDetailScreen> {
         return Icons.ac_unit;
       case maintenanceTypeSparkPlug:
         return Icons.electrical_services;
+      case maintenanceTypeFuel:
+        return Icons.local_gas_station;
       default:
         return Icons.build;
     }
@@ -827,17 +830,26 @@ class _AddMaintenanceDialog extends StatefulWidget {
 class _AddMaintenanceDialogState extends State<_AddMaintenanceDialog> {
   String _selectedType = maintenanceTypeOilChange;
   late TextEditingController _notesController;
+  late TextEditingController _odometerController;
+  late TextEditingController _fuelAmountController;
+  DateTime _selectedDate = DateTime.now();
   bool _isLoading = false;
 
   @override
   void initState() {
     super.initState();
     _notesController = TextEditingController();
+    _odometerController = TextEditingController(
+      text: widget.machine.currentOdometer.toStringAsFixed(1),
+    );
+    _fuelAmountController = TextEditingController();
   }
 
   @override
   void dispose() {
     _notesController.dispose();
+    _odometerController.dispose();
+    _fuelAmountController.dispose();
     super.dispose();
   }
 
@@ -848,7 +860,9 @@ class _AddMaintenanceDialogState extends State<_AddMaintenanceDialog> {
       content: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // Maintenance Type
             DropdownButtonFormField<String>(
               value: _selectedType,
               decoration: const InputDecoration(labelText: 'Maintenance Type'),
@@ -863,11 +877,61 @@ class _AddMaintenanceDialogState extends State<_AddMaintenanceDialog> {
               },
             ),
             const SizedBox(height: 16),
+            
+            // Date Picker
+            InkWell(
+              onTap: _pickDate,
+              child: InputDecorator(
+                decoration: const InputDecoration(
+                  labelText: 'Date',
+                  prefixIcon: Icon(Icons.calendar_today),
+                ),
+                child: Text(
+                  '${_selectedDate.day}/${_selectedDate.month}/${_selectedDate.year}',
+                  style: Theme.of(context).textTheme.bodyLarge,
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            
+            // Odometer Reading
+            TextField(
+              controller: _odometerController,
+              decoration: InputDecoration(
+                labelText: 'Odometer Reading',
+                suffixText: widget.machine.odometerUnit,
+                prefixIcon: const Icon(Icons.speed),
+              ),
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              inputFormatters: [
+                FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,2}')),
+              ],
+            ),
+            const SizedBox(height: 16),
+            
+            // Fuel Amount (only for fuel type)
+            if (_selectedType == maintenanceTypeFuel) ...[
+              TextField(
+                controller: _fuelAmountController,
+                decoration: const InputDecoration(
+                  labelText: 'Fuel Amount (Liters)',
+                  prefixIcon: Icon(Icons.local_gas_station),
+                ),
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                inputFormatters: [
+                  FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,2}')),
+                ],
+              ),
+              const SizedBox(height: 16),
+            ],
+            
+            // Notes
             TextField(
               controller: _notesController,
               decoration: const InputDecoration(
                 labelText: 'Notes (optional)',
                 hintText: 'Add any notes about this service',
+                prefixIcon: Icon(Icons.notes),
               ),
               maxLines: 3,
             ),
@@ -893,15 +957,58 @@ class _AddMaintenanceDialogState extends State<_AddMaintenanceDialog> {
     );
   }
 
+  Future<void> _pickDate() async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: _selectedDate,
+      firstDate: DateTime(2000),
+      lastDate: DateTime.now(),
+    );
+    
+    if (picked != null && picked != _selectedDate) {
+      setState(() {
+        _selectedDate = picked;
+      });
+    }
+  }
+
   Future<void> _save() async {
+    // Validate odometer reading
+    final odometerValue = double.tryParse(_odometerController.text);
+    if (odometerValue == null || odometerValue < 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please enter a valid odometer reading'),
+          backgroundColor: AppTheme.statusOverdue,
+        ),
+      );
+      return;
+    }
+
+    // Validate fuel amount if fuel type
+    double? fuelAmount;
+    if (_selectedType == maintenanceTypeFuel) {
+      fuelAmount = double.tryParse(_fuelAmountController.text);
+      if (fuelAmount == null || fuelAmount <= 0) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Please enter a valid fuel amount'),
+            backgroundColor: AppTheme.statusOverdue,
+          ),
+        );
+        return;
+      }
+    }
+
     setState(() => _isLoading = true);
 
     try {
       final record = MaintenanceRecord(
         machineId: widget.machine.id!,
         maintenanceType: _selectedType,
-        date: DateTime.now(),
-        odometerAtService: widget.machine.currentOdometer,
+        date: _selectedDate,
+        odometerAtService: odometerValue,
+        fuelAmount: fuelAmount,
         notes: _notesController.text.isNotEmpty ? _notesController.text : null,
       );
       

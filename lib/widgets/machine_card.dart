@@ -3,6 +3,7 @@ import 'dart:io';
 import '../models/machine.dart';
 import '../models/maintenance_status.dart';
 import '../utils/app_theme.dart';
+import '../utils/constants.dart';
 
 class MachineCard extends StatelessWidget {
   final Machine machine;
@@ -19,167 +20,141 @@ class MachineCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Machine Image
-            ClipRRect(
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
-              child: Stack(
-                children: [
-                  _buildImage(),
-                  if (overallStatus != null)
-                    Positioned(
-                      top: 12,
-                      right: 12,
-                      child: _buildStatusBadge(),
-                    ),
-                ],
-              ),
-            ),
-            
-            // Machine Info
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Machine Name
-                  Text(
-                    machine.displayName,
-                    style: Theme.of(context).textTheme.displaySmall,
-                  ),
-                  const SizedBox(height: 4),
-                  
-                  // Brand and Model
-                  Text(
-                    '${machine.year ?? ''} ${machine.brand} ${machine.model}'.trim(),
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: AppTheme.textAccent,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  
-                  // Odometer and Tank Info
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _buildInfoItem(
-                          context,
-                          'ODOMETER',
-                          '${machine.currentOdometer.toStringAsFixed(0)} ${machine.odometerUnit}',
-                        ),
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: Row(
+            children: [
+              // Machine Image/Icon on the left
+              _buildImageOrIcon(),
+              const SizedBox(width: 12),
+              
+              // Machine Info in the center
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      _getDisplayTitle(),
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w600,
                       ),
-                      if (machine.tankSize != null)
-                        Expanded(
-                          child: _buildInfoItem(
-                            context,
-                            'FUEL CAPACITY',
-                            '${machine.tankSize!.toStringAsFixed(1)} Liters',
-                          ),
-                        ),
-                    ],
-                  ),
-                ],
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      '${machine.currentOdometer.toStringAsFixed(0)} ${machine.odometerUnit}',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: AppTheme.textSecondary,
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ),
-          ],
+              
+              // Status indicator on the right
+              if (overallStatus != null) _buildStatusIndicator(),
+            ],
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildImage() {
+  String _getDisplayTitle() {
+    if (machine.nickname != null && machine.nickname!.isNotEmpty) {
+      return machine.nickname!;
+    }
+    
+    final parts = <String>[];
+    if (machine.year != null && machine.year!.isNotEmpty) {
+      parts.add(machine.year!);
+    }
+    parts.add(machine.brand);
+    parts.add(machine.model);
+    
+    return parts.join(' ');
+  }
+
+  Widget _buildImageOrIcon() {
     if (machine.imagePath != null && File(machine.imagePath!).existsSync()) {
-      return Image.file(
-        File(machine.imagePath!),
-        height: 200,
-        width: double.infinity,
-        fit: BoxFit.cover,
+      return ClipRRect(
+        borderRadius: BorderRadius.circular(8),
+        child: Image.file(
+          File(machine.imagePath!),
+          width: 60,
+          height: 60,
+          fit: BoxFit.cover,
+        ),
       );
     } else {
       return Container(
-        height: 200,
-        width: double.infinity,
+        width: 60,
+        height: 60,
         decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [
-              AppTheme.accentBlue,
-              AppTheme.cardBackground,
-            ],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
+          color: AppTheme.cardBackground,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(
+            color: AppTheme.textSecondary.withValues(alpha: 0.3),
+            width: 1,
           ),
         ),
-        child: const Icon(
-          Icons.directions_car,
-          size: 80,
+        child: Icon(
+          _getMachineTypeIcon(),
+          size: 32,
           color: AppTheme.textSecondary,
         ),
       );
     }
   }
 
-  Widget _buildInfoItem(BuildContext context, String label, String value) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: Theme.of(context).textTheme.labelLarge?.copyWith(
-            color: AppTheme.textSecondary,
-            fontSize: 11,
-          ),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          value,
-          style: Theme.of(context).textTheme.titleLarge,
-        ),
-      ],
-    );
+  IconData _getMachineTypeIcon() {
+    switch (machine.type) {
+      case machineTypeVehicle:
+        return Icons.directions_car;
+      case machineTypeMotorcycle:
+        return Icons.motorcycle;
+      case machineTypeGenerator:
+        return Icons.power;
+      case machineTypeMachine:
+        return Icons.precision_manufacturing;
+      default:
+        return Icons.build;
+    }
   }
 
-  Widget _buildStatusBadge() {
-    Color badgeColor;
+  Widget _buildStatusIndicator() {
+    Color statusColor;
     IconData icon;
     
     switch (overallStatus!) {
       case MaintenanceStatusType.optimal:
-        badgeColor = AppTheme.statusOptimal;
-        icon = Icons.check_circle;
+        statusColor = AppTheme.statusOptimal;
+        icon = Icons.check;
         break;
       case MaintenanceStatusType.checkSoon:
-        badgeColor = AppTheme.statusWarning;
-        icon = Icons.warning;
-        break;
       case MaintenanceStatusType.overdue:
-        badgeColor = AppTheme.statusOverdue;
-        icon = Icons.error;
+        statusColor = AppTheme.statusWarning;
+        icon = Icons.priority_high;
         break;
     }
 
     return Container(
-      padding: const EdgeInsets.all(8),
+      width: 32,
+      height: 32,
       decoration: BoxDecoration(
-        color: badgeColor,
+        color: statusColor,
         shape: BoxShape.circle,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.3),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
       ),
       child: Icon(
         icon,
         color: Colors.white,
-        size: 24,
+        size: 18,
       ),
     );
   }

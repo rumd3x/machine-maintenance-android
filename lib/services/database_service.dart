@@ -24,9 +24,20 @@ class DatabaseService {
     
     return await openDatabase(
       path,
-      version: 1,
+      version: 2,
       onCreate: _onCreate,
+      onUpgrade: _onUpgrade,
     );
+  }
+
+  Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
+    if (oldVersion < 2) {
+      // Add fuelType column to machines table
+      await db.execute('ALTER TABLE machines ADD COLUMN fuelType TEXT');
+      
+      // Add fuelAmount column to maintenance_records table
+      await db.execute('ALTER TABLE maintenance_records ADD COLUMN fuelAmount REAL');
+    }
   }
 
   Future<void> _onCreate(Database db, int version) async {
@@ -42,6 +53,7 @@ class DatabaseService {
         serialNumber TEXT,
         sparkPlugType TEXT,
         oilType TEXT,
+        fuelType TEXT,
         tankSize REAL,
         imagePath TEXT,
         currentOdometer REAL NOT NULL,
@@ -59,6 +71,7 @@ class DatabaseService {
         maintenanceType TEXT NOT NULL,
         date TEXT NOT NULL,
         odometerAtService REAL NOT NULL,
+        fuelAmount REAL,
         notes TEXT,
         createdAt TEXT NOT NULL,
         FOREIGN KEY (machineId) REFERENCES machines (id) ON DELETE CASCADE

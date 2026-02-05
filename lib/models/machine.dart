@@ -9,6 +9,7 @@ class Machine {
   final String? serialNumber;
   final String? sparkPlugType;
   final String? oilType;
+  final String? fuelType;
   final double? tankSize;
   final String? imagePath;
   final double currentOdometer; // km for vehicles, hours for machines
@@ -26,6 +27,7 @@ class Machine {
     this.serialNumber,
     this.sparkPlugType,
     this.oilType,
+    this.fuelType,
     this.tankSize,
     this.imagePath,
     required this.currentOdometer,
@@ -47,6 +49,7 @@ class Machine {
       'serialNumber': serialNumber,
       'sparkPlugType': sparkPlugType,
       'oilType': oilType,
+      'fuelType': fuelType,
       'tankSize': tankSize,
       'imagePath': imagePath,
       'currentOdometer': currentOdometer,
@@ -68,6 +71,7 @@ class Machine {
       serialNumber: map['serialNumber'] as String?,
       sparkPlugType: map['sparkPlugType'] as String?,
       oilType: map['oilType'] as String?,
+      fuelType: map['fuelType'] as String?,
       tankSize: map['tankSize'] as double?,
       imagePath: map['imagePath'] as String?,
       currentOdometer: map['currentOdometer'] as double,
@@ -88,6 +92,7 @@ class Machine {
     String? serialNumber,
     String? sparkPlugType,
     String? oilType,
+    String? fuelType,
     double? tankSize,
     String? imagePath,
     double? currentOdometer,
@@ -105,6 +110,7 @@ class Machine {
       serialNumber: serialNumber ?? this.serialNumber,
       sparkPlugType: sparkPlugType ?? this.sparkPlugType,
       oilType: oilType ?? this.oilType,
+      fuelType: fuelType ?? this.fuelType,
       tankSize: tankSize ?? this.tankSize,
       imagePath: imagePath ?? this.imagePath,
       currentOdometer: currentOdometer ?? this.currentOdometer,

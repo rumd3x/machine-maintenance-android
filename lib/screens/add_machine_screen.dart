@@ -20,22 +20,53 @@ class AddMachineScreen extends StatefulWidget {
 class _AddMachineScreenState extends State<AddMachineScreen> {
   final _formKey = GlobalKey<FormState>();
   final _imagePicker = ImagePicker();
+  late final TextEditingController _brandController;
+  late final TextEditingController _modelController;
+  late final TextEditingController _nicknameController;
+  late final TextEditingController _yearController;
+  late final TextEditingController _serialNumberController;
+  late final TextEditingController _sparkPlugTypeController;
+  late final TextEditingController _oilTypeController;
+  late final TextEditingController _fuelTypeController;
+  late final TextEditingController _odometerController;
+  late final TextEditingController _tankSizeController;
   
   // Form fields
   String? _imagePath;
   String _type = machineTypeVehicle;
-  String _brand = '';
-  String _model = '';
-  String? _nickname;
-  String? _year;
-  String? _serialNumber;
-  String? _sparkPlugType;
-  String? _oilType;
-  double _currentOdometer = 0;
   String _odometerUnit = odometerUnitKm;
-  double? _tankSize;
   
   bool _isLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _brandController = TextEditingController();
+    _modelController = TextEditingController();
+    _nicknameController = TextEditingController();
+    _yearController = TextEditingController();
+    _serialNumberController = TextEditingController();
+    _sparkPlugTypeController = TextEditingController();
+    _oilTypeController = TextEditingController();
+    _fuelTypeController = TextEditingController();
+    _odometerController = TextEditingController(text: '0');
+    _tankSizeController = TextEditingController();
+  }
+
+  @override
+  void dispose() {
+    _brandController.dispose();
+    _modelController.dispose();
+    _nicknameController.dispose();
+    _yearController.dispose();
+    _serialNumberController.dispose();
+    _sparkPlugTypeController.dispose();
+    _oilTypeController.dispose();
+    _fuelTypeController.dispose();
+    _odometerController.dispose();
+    _tankSizeController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -76,6 +107,7 @@ class _AddMachineScreenState extends State<AddMachineScreen> {
             
             // Brand (Required)
             TextFormField(
+              controller: _brandController,
               decoration: const InputDecoration(
                 labelText: 'Brand *',
                 hintText: 'e.g., Suzuki, Honda, Yamaha',
@@ -83,17 +115,17 @@ class _AddMachineScreenState extends State<AddMachineScreen> {
               ),
               textCapitalization: TextCapitalization.words,
               validator: (value) {
-                if (value == null || value.isEmpty) {
+                if (value == null || value.trim().isEmpty) {
                   return 'Brand is required';
                 }
                 return null;
               },
-              onSaved: (value) => _brand = value!,
             ),
             const SizedBox(height: 16),
             
             // Model (Required)
             TextFormField(
+              controller: _modelController,
               decoration: const InputDecoration(
                 labelText: 'Model *',
                 hintText: 'e.g., Intruder 125, CG 160',
@@ -101,29 +133,29 @@ class _AddMachineScreenState extends State<AddMachineScreen> {
               ),
               textCapitalization: TextCapitalization.words,
               validator: (value) {
-                if (value == null || value.isEmpty) {
+                if (value == null || value.trim().isEmpty) {
                   return 'Model is required';
                 }
                 return null;
               },
-              onSaved: (value) => _model = value!,
             ),
             const SizedBox(height: 16),
             
             // Nickname (Optional)
             TextFormField(
+              controller: _nicknameController,
               decoration: const InputDecoration(
                 labelText: 'Nickname',
                 hintText: 'e.g., My Bike, Work Car',
                 prefixIcon: Icon(Icons.label),
               ),
               textCapitalization: TextCapitalization.words,
-              onSaved: (value) => _nickname = value?.isNotEmpty == true ? value : null,
             ),
             const SizedBox(height: 16),
             
             // Year (Optional)
             TextFormField(
+              controller: _yearController,
               decoration: const InputDecoration(
                 labelText: 'Year',
                 hintText: 'e.g., 2008',
@@ -134,43 +166,54 @@ class _AddMachineScreenState extends State<AddMachineScreen> {
                 FilteringTextInputFormatter.digitsOnly,
                 LengthLimitingTextInputFormatter(4),
               ],
-              onSaved: (value) => _year = value?.isNotEmpty == true ? value : null,
             ),
             const SizedBox(height: 16),
             
             // Serial Number (Optional)
             TextFormField(
+              controller: _serialNumberController,
               decoration: const InputDecoration(
                 labelText: 'Serial Number',
                 hintText: 'VIN or chassis number',
                 prefixIcon: Icon(Icons.numbers),
               ),
               textCapitalization: TextCapitalization.characters,
-              onSaved: (value) => _serialNumber = value?.isNotEmpty == true ? value : null,
             ),
             const SizedBox(height: 16),
             
             // Spark Plug Type (Optional)
             TextFormField(
+              controller: _sparkPlugTypeController,
               decoration: const InputDecoration(
                 labelText: 'Spark Plug Type',
                 hintText: 'e.g., NGK CR7HSA',
                 prefixIcon: Icon(Icons.electrical_services),
               ),
               textCapitalization: TextCapitalization.characters,
-              onSaved: (value) => _sparkPlugType = value?.isNotEmpty == true ? value : null,
             ),
             const SizedBox(height: 16),
             
             // Oil Type (Optional)
             TextFormField(
+              controller: _oilTypeController,
               decoration: const InputDecoration(
                 labelText: 'Oil Type',
                 hintText: 'e.g., 10W-40, 20W-50',
                 prefixIcon: Icon(Icons.water_drop),
               ),
               textCapitalization: TextCapitalization.characters,
-              onSaved: (value) => _oilType = value?.isNotEmpty == true ? value : null,
+            ),
+            const SizedBox(height: 16),
+            
+            // Fuel Type (Optional)
+            TextFormField(
+              controller: _fuelTypeController,
+              decoration: const InputDecoration(
+                labelText: 'Fuel Type',
+                hintText: 'e.g., Gasoline, Diesel, Ethanol',
+                prefixIcon: Icon(Icons.local_gas_station),
+              ),
+              textCapitalization: TextCapitalization.words,
             ),
             const SizedBox(height: 16),
             
@@ -180,6 +223,7 @@ class _AddMachineScreenState extends State<AddMachineScreen> {
             
             // Tank Size (Optional)
             TextFormField(
+              controller: _tankSizeController,
               decoration: const InputDecoration(
                 labelText: 'Tank Size (Liters)',
                 hintText: 'e.g., 10.0',
@@ -189,11 +233,6 @@ class _AddMachineScreenState extends State<AddMachineScreen> {
               inputFormatters: [
                 FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,2}')),
               ],
-              onSaved: (value) {
-                if (value != null && value.isNotEmpty) {
-                  _tankSize = double.tryParse(value);
-                }
-              },
             ),
             const SizedBox(height: 32),
             
@@ -323,6 +362,7 @@ class _AddMachineScreenState extends State<AddMachineScreen> {
         Expanded(
           flex: 2,
           child: TextFormField(
+            controller: _odometerController,
             decoration: InputDecoration(
               labelText: 'Current Odometer *',
               hintText: '0',
@@ -333,7 +373,6 @@ class _AddMachineScreenState extends State<AddMachineScreen> {
             inputFormatters: [
               FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,2}')),
             ],
-            initialValue: '0',
             validator: (value) {
               if (value == null || value.isEmpty) {
                 return 'Odometer is required';
@@ -344,13 +383,12 @@ class _AddMachineScreenState extends State<AddMachineScreen> {
               }
               return null;
             },
-            onSaved: (value) => _currentOdometer = double.parse(value!),
           ),
         ),
         const SizedBox(width: 12),
         Expanded(
           child: DropdownButtonFormField<String>(
-            value: _odometerUnit,
+            initialValue: _odometerUnit,
             decoration: const InputDecoration(
               labelText: 'Unit',
             ),
@@ -455,8 +493,6 @@ class _AddMachineScreenState extends State<AddMachineScreen> {
       return;
     }
 
-    _formKey.currentState!.save();
-
     setState(() {
       _isLoading = true;
     });
@@ -464,16 +500,31 @@ class _AddMachineScreenState extends State<AddMachineScreen> {
     try {
       final machine = Machine(
         type: _type,
-        brand: _brand,
-        model: _model,
-        nickname: _nickname,
-        year: _year,
-        serialNumber: _serialNumber,
-        sparkPlugType: _sparkPlugType,
-        oilType: _oilType,
-        currentOdometer: _currentOdometer,
+        brand: _brandController.text.trim(),
+        model: _modelController.text.trim(),
+        nickname: _nicknameController.text.trim().isEmpty
+            ? null
+            : _nicknameController.text.trim(),
+        year: _yearController.text.trim().isEmpty
+            ? null
+            : _yearController.text.trim(),
+        serialNumber: _serialNumberController.text.trim().isEmpty
+            ? null
+            : _serialNumberController.text.trim(),
+        sparkPlugType: _sparkPlugTypeController.text.trim().isEmpty
+            ? null
+            : _sparkPlugTypeController.text.trim(),
+        oilType: _oilTypeController.text.trim().isEmpty
+            ? null
+            : _oilTypeController.text.trim(),
+        fuelType: _fuelTypeController.text.trim().isEmpty
+            ? null
+            : _fuelTypeController.text.trim(),
+        currentOdometer: double.parse(_odometerController.text.trim()),
         odometerUnit: _odometerUnit,
-        tankSize: _tankSize,
+        tankSize: _tankSizeController.text.trim().isEmpty
+            ? null
+            : double.tryParse(_tankSizeController.text.trim()),
         imagePath: _imagePath,
       );
 

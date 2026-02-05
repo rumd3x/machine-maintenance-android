@@ -5,6 +5,7 @@ class MaintenanceRecord {
   final String maintenanceType;
   final DateTime date;
   final double odometerAtService;
+  final double? fuelAmount; // Liters for fuel maintenance type
   final String? notes;
   final DateTime createdAt;
 
@@ -14,6 +15,7 @@ class MaintenanceRecord {
     required this.maintenanceType,
     required this.date,
     required this.odometerAtService,
+    this.fuelAmount,
     this.notes,
     DateTime? createdAt,
   }) : createdAt = createdAt ?? DateTime.now();
@@ -26,6 +28,7 @@ class MaintenanceRecord {
       'maintenanceType': maintenanceType,
       'date': date.toIso8601String(),
       'odometerAtService': odometerAtService,
+      'fuelAmount': fuelAmount,
       'notes': notes,
       'createdAt': createdAt.toIso8601String(),
     };
@@ -39,6 +42,7 @@ class MaintenanceRecord {
       maintenanceType: map['maintenanceType'] as String,
       date: DateTime.parse(map['date'] as String),
       odometerAtService: map['odometerAtService'] as double,
+      fuelAmount: map['fuelAmount'] as double?,
       notes: map['notes'] as String?,
       createdAt: DateTime.parse(map['createdAt'] as String),
     );
@@ -51,6 +55,7 @@ class MaintenanceRecord {
     String? maintenanceType,
     DateTime? date,
     double? odometerAtService,
+    double? fuelAmount,
     String? notes,
     DateTime? createdAt,
   }) {
@@ -60,6 +65,7 @@ class MaintenanceRecord {
       maintenanceType: maintenanceType ?? this.maintenanceType,
       date: date ?? this.date,
       odometerAtService: odometerAtService ?? this.odometerAtService,
+      fuelAmount: fuelAmount ?? this.fuelAmount,
       notes: notes ?? this.notes,
       createdAt: createdAt ?? this.createdAt,
     );

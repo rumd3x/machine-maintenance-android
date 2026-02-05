@@ -193,6 +193,8 @@ class _MaintenanceIntervalsScreenState extends State<MaintenanceIntervalsScreen>
         return Icons.ac_unit;
       case maintenanceTypeSparkPlug:
         return Icons.electrical_services;
+      case maintenanceTypeFuel:
+        return Icons.local_gas_station;
       default:
         return Icons.build;
     }

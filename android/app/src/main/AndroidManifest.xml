@@ -8,9 +8,11 @@
     <uses-permission android:name="android.permission.WAKE_LOCK"/>
     
     <application
-        android:label="machine_maintenance"
+        android:label="Machine Maintenance Tracker"
         android:name="${applicationName}"
-        android:icon="@mipmap/ic_launcher">
+        android:icon="@mipmap/ic_launcher"
+        android:allowBackup="true"
+        android:fullBackupContent="@xml/backup_rules">
         <activity
             android:name=".MainActivity"
             android:exported="true"

@@ -7,6 +7,7 @@ const String maintenanceTypeCoolant = 'coolant_change';
 const String maintenanceTypeSparkPlug = 'spark_plug_change';
 const String maintenanceTypeBrakeInspection = 'brake_inspection';
 const String maintenanceTypeGeneral = 'general_maintenance';
+const String maintenanceTypeFuel = 'fuel';
 
 // Maintenance type display names
 const Map<String, String> maintenanceTypeNames = {
@@ -18,6 +19,7 @@ const Map<String, String> maintenanceTypeNames = {
   maintenanceTypeSparkPlug: 'Spark Plug',
   maintenanceTypeBrakeInspection: 'Brakes',
   maintenanceTypeGeneral: 'General Service',
+  maintenanceTypeFuel: 'Fuel',
 };
 
 // Machine types
