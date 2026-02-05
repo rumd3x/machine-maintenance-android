@@ -3,9 +3,13 @@ import '../models/machine.dart';
 import '../models/maintenance_record.dart';
 import '../models/maintenance_interval.dart';
 import '../services/database_service.dart';
+import '../services/notification_service.dart';
+import '../services/maintenance_calculator.dart';
 
 class MachineProvider with ChangeNotifier {
   final DatabaseService _databaseService = DatabaseService();
+  final NotificationService _notificationService = NotificationService();
+  final MaintenanceCalculator _calculator = MaintenanceCalculator();
   List<Machine> _machines = [];
   bool _isLoading = false;
 
@@ -34,6 +38,9 @@ class MachineProvider with ChangeNotifier {
       final newMachine = machine.copyWith(id: id);
       _machines.insert(0, newMachine);
       notifyListeners();
+      
+      // Schedule notifications for new machine
+      await _scheduleNotificationsForMachine(newMachine);
     } catch (e) {
       debugPrint('Error adding machine: $e');
       rethrow;
@@ -48,6 +55,9 @@ class MachineProvider with ChangeNotifier {
       if (index != -1) {
         _machines[index] = machine;
         notifyListeners();
+        
+        // Reschedule notifications after update
+        await _scheduleNotificationsForMachine(machine);
       }
     } catch (e) {
       debugPrint('Error updating machine: $e');
@@ -60,6 +70,10 @@ class MachineProvider with ChangeNotifier {
     try {
       await _databaseService.deleteMachine(id);
       _machines.removeWhere((m) => m.id == id);
+      
+      // Cancel notifications for deleted machine
+      await _notificationService.cancelMachineNotifications(id);
+      
       notifyListeners();
     } catch (e) {
       debugPrint('Error deleting machine: $e');
@@ -81,6 +95,12 @@ class MachineProvider with ChangeNotifier {
     try {
       await _databaseService.insertMaintenanceRecord(record);
       notifyListeners();
+      
+      // Reschedule notifications after maintenance is added
+      final machine = getMachine(record.machineId);
+      if (machine != null) {
+        await _scheduleNotificationsForMachine(machine);
+      }
     } catch (e) {
       debugPrint('Error adding maintenance record: $e');
       rethrow;
@@ -115,6 +135,39 @@ class MachineProvider with ChangeNotifier {
     } catch (e) {
       debugPrint('Error getting maintenance intervals: $e');
       return [];
+    }
+  }
+
+  /// Schedule notifications for a machine based on its maintenance status
+  Future<void> _scheduleNotificationsForMachine(Machine machine) async {
+    try {
+      if (machine.id == null) return;
+
+      // Get intervals and records
+      final intervals = await getMaintenanceIntervals(machine.id!);
+      final records = await getMaintenanceRecords(machine.id!);
+
+      // Calculate all statuses
+      final statuses = await _calculator.calculateAllStatuses(
+        machine: machine,
+        intervals: intervals,
+        records: records,
+      );
+
+      // Schedule notifications
+      await _notificationService.scheduleMaintenanceReminders(
+        machine: machine,
+        statuses: statuses,
+      );
+    } catch (e) {
+      debugPrint('Error scheduling notifications for machine: $e');
+    }
+  }
+
+  /// Reschedule all notifications for all machines
+  Future<void> rescheduleAllNotifications() async {
+    for (final machine in _machines) {
+      await _scheduleNotificationsForMachine(machine);
     }
   }
 }
