@@ -55,14 +55,19 @@
 - ✅ `HomeScreen` - Dashboard with machine list
 - ✅ `MachineCard` widget - Machine display card
 - ✅ `AddMachineScreen` - Complete form with image picker
-- ✅ `MachineDetailScreen` - Full machine details view
+- ✅ `MachineDetailScreen` - Full machine details view with status indicators
+- ✅ `EditMachineScreen` - Update machine information
+  - Pre-filled form with all current data
+  - Update photo (camera/gallery/remove)
+  - Edit all specifications
+  - Type and odometer unit selection
+  - Form validation
 - ✅ `MaintenanceIntervalsScreen` - Configure maintenance schedules
   - View all intervals
   - Edit distance/time per maintenance type
   - Enable/disable toggles
   - Add custom intervals
   - Delete intervals
-  - Validation and feedback
 - ✅ `StatusIndicator` widget - Circular progress status displays
 
 ### 8. Maintenance Intelligence System
@@ -84,17 +89,18 @@
 ## Next Steps 🚀
 
 ### Phase 3: Polish & Refinement (Current Phase)
-1. **Edit Machine Screen** 🔄 IN PROGRESS
-   - Update machine information
-   - Change photo
-   - Modify specifications
-   - Pre-fill form with current data
-
-2. **Enhanced UX**
+1. **Enhanced UX** 🔄 IN PROGRESS
    - Pull-to-refresh on lists
-   - Search/filter machines
-   - Sort options
-   - Export maintenance history
+   - Search/filter machines on home screen
+   - Sort options (by name, brand, status)
+   - Export maintenance history to CSV/PDF
+   - Machine statistics dashboard
+
+2. **Optional Features**
+   - Maintenance reminders/notifications
+   - Cost tracking per maintenance
+   - Service provider contacts
+   - Document attachments (receipts, manuals)
 
 ### Phase 4: Testing & Deployment
 1. **Maintenance History Screen**
