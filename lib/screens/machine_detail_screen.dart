@@ -3,8 +3,10 @@ import 'package:provider/provider.dart';
 import 'dart:io';
 import '../models/machine.dart';
 import '../models/maintenance_record.dart';
+import '../models/maintenance_interval.dart';
 import '../models/maintenance_status.dart';
 import '../services/machine_provider.dart';
+import '../services/maintenance_calculator.dart';
 import '../widgets/status_indicator.dart';
 import '../utils/app_theme.dart';
 import '../utils/constants.dart';
@@ -24,6 +26,9 @@ class MachineDetailScreen extends StatefulWidget {
 class _MachineDetailScreenState extends State<MachineDetailScreen> {
   Machine? _machine;
   List<MaintenanceRecord> _records = [];
+  List<MaintenanceInterval> _intervals = [];
+  Map<String, MaintenanceStatus> _statuses = {};
+  final _calculator = MaintenanceCalculator();
   bool _isLoading = true;
 
   @override
@@ -40,6 +45,26 @@ class _MachineDetailScreenState extends State<MachineDetailScreen> {
     
     if (_machine != null) {
       _records = await provider.getMaintenanceRecords(widget.machineId);
+      _intervals = await provider.getMaintenanceIntervals(widget.machineId);
+      
+      // Create default intervals if none exist
+      if (_intervals.isEmpty) {
+        final defaults = _calculator.getDefaultIntervals(
+          widget.machineId,
+          _machine!.type,
+        );
+        for (final interval in defaults) {
+          await provider.saveMaintenanceInterval(interval);
+        }
+        _intervals = await provider.getMaintenanceIntervals(widget.machineId);
+      }
+      
+      // Calculate all statuses
+      _statuses = await _calculator.calculateAllStatuses(
+        machine: _machine!,
+        intervals: _intervals,
+        records: _records,
+      );
     }
     
     setState(() => _isLoading = false);
@@ -289,41 +314,175 @@ class _MachineDetailScreenState extends State<MachineDetailScreen> {
   }
 
   Widget _buildStatusSection() {
-    // TODO: Calculate actual status from maintenance intervals
-    // For now, showing example statuses
+    if (_statuses.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    // Get top 3 most critical statuses to display
+    final sortedStatuses = _statuses.entries.toList()
+      ..sort((a, b) => b.value.status.index.compareTo(a.value.status.index));
+    
+    final displayStatuses = sortedStatuses.take(3).toList();
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'Maintenance Status',
-            style: Theme.of(context).textTheme.displaySmall,
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Maintenance Status',
+                style: Theme.of(context).textTheme.displaySmall,
+              ),
+              TextButton(
+                onPressed: _showAllStatuses,
+                child: const Text('View All'),
+              ),
+            ],
           ),
           const SizedBox(height: 16),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              StatusIndicator(
-                label: 'Systems',
-                status: MaintenanceStatusType.optimal,
-                icon: Icons.check_circle,
-              ),
-              StatusIndicator(
-                label: 'Oil Life',
-                status: MaintenanceStatusType.checkSoon,
-                icon: Icons.water_drop,
-              ),
-              StatusIndicator(
-                label: 'Brakes',
-                status: MaintenanceStatusType.overdue,
-                icon: Icons.warning,
-              ),
-            ],
+            children: displayStatuses.map((entry) {
+              final label = maintenanceTypeNames[entry.key] ?? entry.key;
+              return StatusIndicator(
+                label: label,
+                status: entry.value.status,
+                icon: _getMaintenanceIcon(entry.key),
+              );
+            }).toList(),
           ),
         ],
       ),
     );
+  }
+
+  void _showAllStatuses() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: AppTheme.cardBackground,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (context) => DraggableScrollableSheet(
+        initialChildSize: 0.7,
+        minChildSize: 0.5,
+        maxChildSize: 0.95,
+        expand: false,
+        builder: (context, scrollController) {
+          return Column(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  children: [
+                    Container(
+                      width: 40,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: AppTheme.textSecondary,
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      'All Maintenance Items',
+                      style: Theme.of(context).textTheme.displaySmall,
+                    ),
+                  ],
+                ),
+              ),
+              Expanded(
+                child: ListView.builder(
+                  controller: scrollController,
+                  padding: const EdgeInsets.all(16),
+                  itemCount: _statuses.length,
+                  itemBuilder: (context, index) {
+                    final entry = _statuses.entries.elementAt(index);
+                    final status = entry.value;
+                    final label = maintenanceTypeNames[entry.key] ?? entry.key;
+                    
+                    return Card(
+                      margin: const EdgeInsets.only(bottom: 12),
+                      child: ListTile(
+                        leading: Icon(
+                          _getMaintenanceIcon(entry.key),
+                          color: _getStatusColor(status.status),
+                          size: 32,
+                        ),
+                        title: Text(label),
+                        subtitle: Text(_getStatusDescription(status)),
+                        trailing: Chip(
+                          label: Text(
+                            _getStatusText(status.status),
+                            style: const TextStyle(fontSize: 12),
+                          ),
+                          backgroundColor: _getStatusColor(status.status).withOpacity(0.2),
+                          side: BorderSide(
+                            color: _getStatusColor(status.status),
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  Color _getStatusColor(MaintenanceStatusType status) {
+    switch (status) {
+      case MaintenanceStatusType.optimal:
+        return AppTheme.statusOptimal;
+      case MaintenanceStatusType.checkSoon:
+        return AppTheme.statusWarning;
+      case MaintenanceStatusType.overdue:
+        return AppTheme.statusOverdue;
+    }
+  }
+
+  String _getStatusText(MaintenanceStatusType status) {
+    switch (status) {
+      case MaintenanceStatusType.optimal:
+        return 'Optimal';
+      case MaintenanceStatusType.checkSoon:
+        return 'Check Soon';
+      case MaintenanceStatusType.overdue:
+        return 'Overdue';
+    }
+  }
+
+  String _getStatusDescription(MaintenanceStatus status) {
+    final parts = <String>[];
+    
+    if (status.distanceUntilDue != null) {
+      if (status.distanceUntilDue! > 0) {
+        parts.add('${status.distanceUntilDue!.toStringAsFixed(0)} ${_machine!.odometerUnit} remaining');
+      } else {
+        parts.add('${status.distanceUntilDue!.abs().toStringAsFixed(0)} ${_machine!.odometerUnit} overdue');
+      }
+    }
+    
+    if (status.daysUntilDue != null) {
+      if (status.daysUntilDue! > 0) {
+        parts.add('${status.daysUntilDue} days remaining');
+      } else {
+        parts.add('${status.daysUntilDue!.abs()} days overdue');
+      }
+    }
+    
+    if (parts.isEmpty) {
+      return 'No interval configured';
+    }
+    
+    return parts.join(' • ');
   }
 
   Widget _buildRecentActivity() {

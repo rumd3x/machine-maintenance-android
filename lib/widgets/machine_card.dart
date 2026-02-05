@@ -1,16 +1,19 @@
 import 'package:flutter/material.dart';
 import 'dart:io';
 import '../models/machine.dart';
+import '../models/maintenance_status.dart';
 import '../utils/app_theme.dart';
 
 class MachineCard extends StatelessWidget {
   final Machine machine;
   final VoidCallback onTap;
+  final MaintenanceStatusType? overallStatus;
 
   const MachineCard({
     Key? key,
     required this.machine,
     required this.onTap,
+    this.overallStatus,
   }) : super(key: key);
 
   @override
@@ -26,7 +29,17 @@ class MachineCard extends StatelessWidget {
             // Machine Image
             ClipRRect(
               borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
-              child: _buildImage(),
+              child: Stack(
+                children: [
+                  _buildImage(),
+                  if (overallStatus != null)
+                    Positioned(
+                      top: 12,
+                      right: 12,
+                      child: _buildStatusBadge(),
+                    ),
+                ],
+              ),
             ),
             
             // Machine Info
@@ -128,6 +141,46 @@ class MachineCard extends StatelessWidget {
           style: Theme.of(context).textTheme.titleLarge,
         ),
       ],
+    );
+  }
+
+  Widget _buildStatusBadge() {
+    Color badgeColor;
+    IconData icon;
+    
+    switch (overallStatus!) {
+      case MaintenanceStatusType.optimal:
+        badgeColor = AppTheme.statusOptimal;
+        icon = Icons.check_circle;
+        break;
+      case MaintenanceStatusType.checkSoon:
+        badgeColor = AppTheme.statusWarning;
+        icon = Icons.warning;
+        break;
+      case MaintenanceStatusType.overdue:
+        badgeColor = AppTheme.statusOverdue;
+        icon = Icons.error;
+        break;
+    }
+
+    return Container(
+      padding: const EdgeInsets.all(8),
+      decoration: BoxDecoration(
+        color: badgeColor,
+        shape: BoxShape.circle,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.3),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Icon(
+        icon,
+        color: Colors.white,
+        size: 24,
+      ),
     );
   }
 }
