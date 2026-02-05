@@ -3,6 +3,7 @@ import 'package:path/path.dart';
 import '../models/machine.dart';
 import '../models/maintenance_record.dart';
 import '../models/maintenance_interval.dart';
+import '../models/app_notification.dart';
 
 /// Database service for local SQLite storage
 class DatabaseService {
@@ -24,7 +25,7 @@ class DatabaseService {
     
     return await openDatabase(
       path,
-      version: 2,
+      version: 3,
       onCreate: _onCreate,
       onUpgrade: _onUpgrade,
     );
@@ -37,6 +38,27 @@ class DatabaseService {
       
       // Add fuelAmount column to maintenance_records table
       await db.execute('ALTER TABLE maintenance_records ADD COLUMN fuelAmount REAL');
+    }
+    
+    if (oldVersion < 3) {
+      // Create notifications table
+      await db.execute('''
+        CREATE TABLE notifications(
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          title TEXT NOT NULL,
+          body TEXT NOT NULL,
+          machineId INTEGER,
+          createdAt TEXT NOT NULL,
+          isRead INTEGER NOT NULL DEFAULT 0,
+          FOREIGN KEY (machineId) REFERENCES machines (id) ON DELETE CASCADE
+        )
+      ''');
+      
+      // Create index for better query performance
+      await db.execute('''
+        CREATE INDEX idx_notifications_isRead 
+        ON notifications(isRead)
+      ''');
     }
   }
 
@@ -92,6 +114,19 @@ class DatabaseService {
       )
     ''');
 
+    // Create notifications table
+    await db.execute('''
+      CREATE TABLE notifications(
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        title TEXT NOT NULL,
+        body TEXT NOT NULL,
+        machineId INTEGER,
+        createdAt TEXT NOT NULL,
+        isRead INTEGER NOT NULL DEFAULT 0,
+        FOREIGN KEY (machineId) REFERENCES machines (id) ON DELETE CASCADE
+      )
+    ''');
+
     // Create indexes for better query performance
     await db.execute('''
       CREATE INDEX idx_maintenance_records_machineId 
@@ -101,6 +136,11 @@ class DatabaseService {
     await db.execute('''
       CREATE INDEX idx_maintenance_intervals_machineId 
       ON maintenance_intervals(machineId)
+    ''');
+
+    await db.execute('''
+      CREATE INDEX idx_notifications_isRead 
+      ON notifications(isRead)
     ''');
   }
 
@@ -256,6 +296,64 @@ class DatabaseService {
       where: 'id = ?',
       whereArgs: [id],
     );
+  }
+
+  // ========== Notification CRUD Operations ==========
+
+  Future<int> insertNotification(AppNotification notification) async {
+    final db = await database;
+    return await db.insert('notifications', notification.toMap());
+  }
+
+  Future<List<AppNotification>> getAllNotifications() async {
+    final db = await database;
+    final List<Map<String, dynamic>> maps = await db.query(
+      'notifications',
+      orderBy: 'createdAt DESC',
+    );
+    return List.generate(maps.length, (i) => AppNotification.fromMap(maps[i]));
+  }
+
+  Future<int> getUnreadNotificationCount() async {
+    final db = await database;
+    final result = await db.rawQuery(
+      'SELECT COUNT(*) as count FROM notifications WHERE isRead = 0'
+    );
+    return Sqflite.firstIntValue(result) ?? 0;
+  }
+
+  Future<int> updateNotification(AppNotification notification) async {
+    final db = await database;
+    return await db.update(
+      'notifications',
+      notification.toMap(),
+      where: 'id = ?',
+      whereArgs: [notification.id],
+    );
+  }
+
+  Future<int> markNotificationAsRead(int id) async {
+    final db = await database;
+    return await db.update(
+      'notifications',
+      {'isRead': 1},
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+  }
+
+  Future<int> deleteNotification(int id) async {
+    final db = await database;
+    return await db.delete(
+      'notifications',
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+  }
+
+  Future<int> deleteAllNotifications() async {
+    final db = await database;
+    return await db.delete('notifications');
   }
 
   // ========== Utility Operations ==========

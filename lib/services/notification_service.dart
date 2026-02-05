@@ -4,6 +4,8 @@ import 'package:timezone/data/latest_all.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
 import '../models/machine.dart';
 import '../models/maintenance_status.dart';
+import '../models/app_notification.dart';
+import 'database_service.dart';
 
 class NotificationService {
   static final NotificationService _instance = NotificationService._internal();
@@ -12,6 +14,7 @@ class NotificationService {
 
   final FlutterLocalNotificationsPlugin _notifications =
       FlutterLocalNotificationsPlugin();
+  final DatabaseService _dbService = DatabaseService();
   bool _initialized = false;
 
   /// Initialize the notification service
@@ -71,6 +74,31 @@ class NotificationService {
     return true;
   }
 
+  /// Request exact alarm permission (Android 12+)
+  Future<bool> canScheduleExactAlarms() async {
+    if (defaultTargetPlatform == TargetPlatform.android) {
+      final androidPlugin = _notifications.resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin>();
+      
+      if (androidPlugin != null) {
+        return await androidPlugin.canScheduleExactNotifications() ?? false;
+      }
+    }
+    return true;
+  }
+
+  /// Request exact alarm permission
+  Future<void> requestExactAlarmPermission() async {
+    if (defaultTargetPlatform == TargetPlatform.android) {
+      final androidPlugin = _notifications.resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin>();
+      
+      if (androidPlugin != null) {
+        await androidPlugin.requestExactAlarmsPermission();
+      }
+    }
+  }
+
   /// Handle notification tap
   void _onNotificationTapped(NotificationResponse response) {
     // TODO: Navigate to machine detail screen based on payload
@@ -83,6 +111,8 @@ class NotificationService {
     required String title,
     required String body,
     String? payload,
+    int? machineId,
+    bool saveToDb = false,
   }) async {
     const androidDetails = AndroidNotificationDetails(
       'maintenance_reminders',
@@ -103,6 +133,17 @@ class NotificationService {
       notificationDetails,
       payload: payload,
     );
+
+    // Save to database only if requested (to avoid duplicates when called from provider)
+    if (saveToDb) {
+      final appNotification = AppNotification(
+        title: title,
+        body: body,
+        machineId: machineId,
+        createdAt: DateTime.now(),
+      );
+      await _dbService.insertNotification(appNotification);
+    }
   }
 
   /// Schedule a notification for a specific time
@@ -112,6 +153,8 @@ class NotificationService {
     required String body,
     required DateTime scheduledDate,
     String? payload,
+    int? machineId,
+    bool saveToDb = true,
   }) async {
     const androidDetails = AndroidNotificationDetails(
       'maintenance_reminders',
@@ -136,6 +179,17 @@ class NotificationService {
           UILocalNotificationDateInterpretation.absoluteTime,
       payload: payload,
     );
+
+    // Save to database (scheduled notifications will be shown when triggered)
+    if (saveToDb) {
+      final appNotification = AppNotification(
+        title: title,
+        body: body,
+        machineId: machineId,
+        createdAt: scheduledDate,
+      );
+      await _dbService.insertNotification(appNotification);
+    }
   }
 
   /// Cancel a specific notification
@@ -177,13 +231,38 @@ class NotificationService {
         final title = _getNotificationTitle(machine, maintenanceType, status);
         final body = _getNotificationBody(machine, maintenanceType, status);
 
-        await scheduleNotification(
-          id: notificationId++,
-          title: title,
-          body: body,
-          scheduledDate: scheduledDate,
-          payload: 'machine_${machine.id}_$maintenanceType',
-        );
+        // For overdue items, show notification immediately and save to DB
+        if (status.status == MaintenanceStatusType.overdue) {
+          // Save to database
+          final appNotification = AppNotification(
+            title: title,
+            body: body,
+            machineId: machine.id,
+            createdAt: DateTime.now(),
+          );
+          await _dbService.insertNotification(appNotification);
+          
+          // Show system notification immediately
+          await showNotification(
+            id: notificationId++,
+            title: title,
+            body: body,
+            payload: 'machine_${machine.id}_$maintenanceType',
+            machineId: machine.id,
+            saveToDb: false, // Already saved above
+          );
+        } else {
+          // For checkSoon, schedule for future
+          await scheduleNotification(
+            id: notificationId++,
+            title: title,
+            body: body,
+            scheduledDate: scheduledDate,
+            payload: 'machine_${machine.id}_$maintenanceType',
+            machineId: machine.id,
+            saveToDb: true,
+          );
+        }
       }
     }
   }

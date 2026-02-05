@@ -4,11 +4,13 @@ import '../models/machine.dart';
 import '../models/maintenance_status.dart';
 import '../services/machine_provider.dart';
 import '../services/maintenance_calculator.dart';
+import '../services/notification_provider.dart';
 import '../widgets/machine_card.dart';
 import '../utils/app_theme.dart';
 import 'add_machine_screen.dart';
 import 'machine_detail_screen.dart';
 import 'about_screen.dart';
+import 'notification_history_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({Key? key}) : super(key: key);
@@ -24,8 +26,14 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     // Load machines when screen initializes
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<MachineProvider>().loadMachines();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      await context.read<MachineProvider>().loadMachines();
+      await context.read<NotificationProvider>().loadNotifications();
+      
+      // Schedule/check notifications for all machines
+      if (mounted) {
+        await context.read<MachineProvider>().rescheduleAllNotifications();
+      }
     });
   }
 
@@ -70,10 +78,38 @@ class _HomeScreenState extends State<HomeScreen> {
                       ],
                     ),
                   ),
-                  IconButton(
-                    icon: const Icon(Icons.notifications_outlined),
-                    onPressed: () {
-                      // TODO: Implement notifications view
+                  Consumer<NotificationProvider>(
+                    builder: (context, notificationProvider, child) {
+                      final hasUnread = notificationProvider.unreadCount > 0;
+                      
+                      return Stack(
+                        children: [
+                          IconButton(
+                            icon: const Icon(Icons.notifications_outlined),
+                            onPressed: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => const NotificationHistoryScreen(),
+                                ),
+                              );
+                            },
+                          ),
+                          if (hasUnread)
+                            Positioned(
+                              right: 8,
+                              top: 8,
+                              child: Container(
+                                width: 12,
+                                height: 12,
+                                decoration: const BoxDecoration(
+                                  color: Colors.red,
+                                  shape: BoxShape.circle,
+                                ),
+                              ),
+                            ),
+                        ],
+                      );
                     },
                   ),
                 ],

@@ -122,6 +122,12 @@ class MachineProvider with ChangeNotifier {
     try {
       await _databaseService.insertMaintenanceInterval(interval);
       notifyListeners();
+      
+      // Reschedule notifications after interval change
+      final machine = getMachine(interval.machineId);
+      if (machine != null) {
+        await _scheduleNotificationsForMachine(machine);
+      }
     } catch (e) {
       debugPrint('Error saving maintenance interval: $e');
       rethrow;
