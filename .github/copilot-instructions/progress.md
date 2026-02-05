@@ -72,21 +72,20 @@
 
 ## Next Steps 🚀
 
-### Phase 1: Detail View & Status (Current Phase)
-1. **Machine Detail Screen** 🔄 IN PROGRESS
-   - Display full machine information
-   - Hero image
-   - Status indicators (circular progress like reference)
-   - Recent maintenance activity list
-   - Update odometer button
-   - Add maintenance button
-   - Edit/delete options
+### Phase 2: Maintenance Intelligence (Current Phase)
+1. **Maintenance Status Calculator Service** 🔄 IN PROGRESS
+   - Calculate actual status based on maintenance intervals
+   - Distance/time-based logic for each maintenance type
+   - Determine when maintenance is due (optimal/warning/overdue)
+   - Replace placeholder status with real calculations
 
-2. **Maintenance Status Calculator**
-   - Business logic to determine status (optimal/warning/overdue)
-   - Calculate based on intervals and current odometer
+2. **Maintenance Intervals Configuration**
+   - Screen to set up intervals per maintenance type
+   - Distance-based intervals (e.g., oil change every 5000 km)
+   - Time-based intervals (e.g., oil change every 6 months)
+   - Enable/disable specific maintenance types
 
-### Phase 2: Maintenance Features
+### Phase 3: Enhanced Features
 1. **Maintenance History Screen**
    - List of past maintenance
    - Add new maintenance record
@@ -133,7 +132,23 @@
    - APK generation and verification
 
 ## Current Status
-**Phase**: UI Foundation Complete - Ready for Form Implementation
+**Phase**: Core UI Complete - Ready for Maintenance Intelligence
 **Last Updated**: 4 de fevereiro de 2026
 
-**Key Achievement**: App now has a functional dark-themed home screen that displays machines from the database. The visual design matches the reference screenshot with proper card layouts and color scheme.
+**Key Achievement**: Full CRUD functionality for machines complete! Users can now:
+- Add machines with photos and all details
+- View machine details with beautiful UI matching reference design
+- Update odometer readings
+- Add maintenance records
+- Delete machines
+
+**What Works:**
+- ✅ Home screen lists all machines
+- ✅ Add machine with photo, type, and all specs
+- ✅ View detailed machine information
+- ✅ Circular status indicators (placeholder data)
+- ✅ Maintenance history with time-ago formatting
+- ✅ Update odometer and add service records
+- ✅ All data persisted locally in SQLite
+
+**What's Next:** Implement the maintenance status calculator to show real status based on intervals and usage, then add configuration screens for maintenance schedules.
