@@ -41,33 +41,6 @@ class _HomeScreenState extends State<HomeScreen> {
               padding: const EdgeInsets.all(16),
               child: Row(
                 children: [
-                  CircleAvatar(
-                    radius: 24,
-                    backgroundColor: AppTheme.cardBackground,
-                    child: Icon(
-                      Icons.person,
-                      color: AppTheme.textPrimary,
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'WELCOME BACK',
-                          style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                            color: AppTheme.textSecondary,
-                            fontSize: 11,
-                          ),
-                        ),
-                        Text(
-                          'My Garage',
-                          style: Theme.of(context).textTheme.displaySmall,
-                        ),
-                      ],
-                    ),
-                  ),
                   IconButton(
                     icon: const Icon(Icons.info_outline),
                     onPressed: () {
@@ -77,6 +50,30 @@ class _HomeScreenState extends State<HomeScreen> {
                           builder: (context) => const AboutScreen(),
                         ),
                       );
+                    },
+                  ),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        Text(
+                          'WELCOME BACK',
+                          style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                            color: AppTheme.textSecondary,
+                            fontSize: 11,
+                          ),
+                        ),
+                        Text(
+                          'MY GARAGE',
+                          style: Theme.of(context).textTheme.displaySmall,
+                        ),
+                      ],
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.notifications_outlined),
+                    onPressed: () {
+                      // TODO: Implement notifications view
                     },
                   ),
                 ],
