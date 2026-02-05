@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../models/machine.dart';
+import '../models/maintenance_status.dart';
 import '../services/machine_provider.dart';
+import '../services/maintenance_calculator.dart';
 import '../widgets/machine_card.dart';
 import '../utils/app_theme.dart';
 import 'add_machine_screen.dart';
@@ -14,6 +17,8 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  final _calculator = MaintenanceCalculator();
+
   @override
   void initState() {
     super.initState();
@@ -112,16 +117,23 @@ class _HomeScreenState extends State<HomeScreen> {
                     itemCount: provider.machines.length,
                     itemBuilder: (context, index) {
                       final machine = provider.machines[index];
-                      return MachineCard(
-                        machine: machine,
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => MachineDetailScreen(
-                                machineId: machine.id!,
-                              ),
-                            ),
+                      
+                      return FutureBuilder(
+                        future: _calculateOverallStatus(provider, machine),
+                        builder: (context, snapshot) {
+                          return MachineCard(
+                            machine: machine,
+                            overallStatus: snapshot.data,
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => MachineDetailScreen(
+                                    machineId: machine.id!,
+                                  ),
+                                ),
+                              );
+                            },
                           );
                         },
                       );
@@ -146,5 +158,25 @@ class _HomeScreenState extends State<HomeScreen> {
         label: const Text('Add Machine'),
       ),
     );
+  }
+
+  Future<MaintenanceStatusType> _calculateOverallStatus(
+    MachineProvider provider,
+    Machine machine,
+  ) async {
+    try {
+      final intervals = await provider.getMaintenanceIntervals(machine.id!);
+      final records = await provider.getMaintenanceRecords(machine.id!);
+      
+      final statuses = await _calculator.calculateAllStatuses(
+        machine: machine,
+        intervals: intervals,
+        records: records,
+      );
+      
+      return _calculator.getOverallStatus(statuses);
+    } catch (e) {
+      return MaintenanceStatusType.optimal;
+    }
   }
 }
