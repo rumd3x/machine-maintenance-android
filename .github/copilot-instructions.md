@@ -101,3 +101,121 @@ import '../services/machine_provider.dart';
 import '../utils/app_theme.dart';
 import '../utils/constants.dart';
 ```
+## Notification System Architecture
+
+### Database Structure
+
+**Current Version**: 3
+
+#### Version History:
+- **v1**: Initial schema (machines, maintenance_records, maintenance_intervals)
+- **v2**: Added `fuelType` to machines, `fuelAmount` to maintenance_records
+- **v3**: Added `notifications` table
+
+#### Notifications Table Schema:
+```sql
+CREATE TABLE notifications(
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  title TEXT NOT NULL,
+  body TEXT NOT NULL,
+  machineId INTEGER,  -- NULL for test notifications
+  createdAt TEXT NOT NULL,
+  isRead INTEGER NOT NULL DEFAULT 0,
+  FOREIGN KEY (machineId) REFERENCES machines (id) ON DELETE CASCADE
+)
+```
+
+### Notification Flow
+
+**IMPORTANT**: Notifications are handled by THREE separate but coordinated systems:
+
+1. **NotificationService** (`lib/services/notification_service.dart`)
+   - Handles Android system notifications (push alerts)
+   - Schedules exact alarms for maintenance reminders
+   - Parameters: `saveToDb` - set to `false` when called from NotificationProvider (avoids duplicates)
+
+2. **NotificationProvider** (`lib/services/notification_provider.dart`)
+   - Manages notification history in database
+   - State management for UI (unread count, list updates)
+   - Method `addNotification()` - saves to DB AND triggers push notification
+   - Used by UI components to display notification history
+
+3. **BackgroundService** (`lib/services/background_service.dart`)
+   - WorkManager integration for background checks
+   - Periodic maintenance status checks (every 6 hours)
+   - Boot receiver integration for post-restart rescheduling
+   - Ensures notifications work even when app is closed
+
+### Notification Triggers
+
+Notifications are checked/scheduled at:
+1. **App startup** (`main.dart`) - immediate check via `triggerImmediateCheck()`
+2. **Home screen load** (`home_screen.dart`) - `rescheduleAllNotifications()`
+3. **Machine added/updated** (`machine_provider.dart`) - `_scheduleNotificationsForMachine()`
+4. **Maintenance logged** (`machine_provider.dart`) - automatic reschedule
+5. **Intervals changed** (`machine_provider.dart`) - `saveMaintenanceInterval()`
+6. **Device boot** (Android boot receiver) - WorkManager auto-reschedule
+7. **Periodic background** (WorkManager) - every 6 hours
+
+### Best Practices for Notifications
+
+**When modifying notification behavior:**
+
+1. **Avoid double-saving**: 
+   - If calling `NotificationService.showNotification()` from `NotificationProvider`, set `saveToDb: false`
+   - If calling directly (e.g., from scheduled tasks), set `saveToDb: true`
+
+2. **Status-based scheduling**:
+   - **Overdue**: Send immediately + save to history
+   - **Check Soon**: Schedule for future + save to history
+
+3. **Reschedule after changes**:
+   - Always call `_scheduleNotificationsForMachine()` after updating machine/maintenance data
+   - Cancel old notifications before rescheduling to prevent duplicates
+
+4. **Database migrations**:
+   - ALWAYS increment version number in `database_service.dart`
+   - Add migration logic in `_onUpgrade()` method
+   - Test both fresh install (onCreate) and upgrade paths
+
+### Theme Constants
+
+**IMPORTANT**: Use correct theme constant names from `lib/utils/app_theme.dart`:
+
+- ✅ `AppTheme.primaryBackground` (NOT `darkBackground`)
+- ✅ `AppTheme.cardBackground` (NOT `cardColor`)
+- ✅ `AppTheme.textAccent` (NOT `primaryBlue`)
+- ✅ `AppTheme.accentBlue`
+- ✅ `AppTheme.statusOptimal`, `statusWarning`, `statusOverdue`
+- ✅ `AppTheme.textPrimary`, `textSecondary`
+
+### Navigation Patterns
+
+**MachineDetailScreen**: Always navigate with `machineId` parameter:
+```dart
+Navigator.push(
+  context,
+  MaterialPageRoute(
+    builder: (context) => MachineDetailScreen(machineId: machine.id),
+  ),
+);
+```
+
+**NOT** with `machine` object (outdated pattern).
+
+### Critical Dependencies
+
+- `workmanager: ^0.9.0` - Background task execution
+- `flutter_local_notifications: ^17.0.0` - System notifications
+- `sqflite: ^2.3.0` - Local database
+
+### Android Permissions Required
+
+Notifications require these permissions in `AndroidManifest.xml`:
+- `POST_NOTIFICATIONS` - Show notifications (Android 13+)
+- `SCHEDULE_EXACT_ALARM` - Precise scheduling
+- `RECEIVE_BOOT_COMPLETED` - Post-restart rescheduling
+- `FOREGROUND_SERVICE` - Background reliability
+- `FOREGROUND_SERVICE_DATA_SYNC` - Background work
+- `WAKE_LOCK` - Wake device for notifications
+- `REQUEST_IGNORE_BATTERY_OPTIMIZATIONS` - Battery saver exemption

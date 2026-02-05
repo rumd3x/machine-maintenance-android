@@ -25,7 +25,7 @@ class DatabaseService {
     
     return await openDatabase(
       path,
-      version: 3,
+      version: 4,
       onCreate: _onCreate,
       onUpgrade: _onUpgrade,
     );
@@ -59,6 +59,11 @@ class DatabaseService {
         CREATE INDEX idx_notifications_isRead 
         ON notifications(isRead)
       ''');
+    }
+    
+    if (oldVersion < 4) {
+      // Add notificationSent column to maintenance_intervals table
+      await db.execute('ALTER TABLE maintenance_intervals ADD COLUMN notificationSent INTEGER NOT NULL DEFAULT 0');
     }
   }
 
@@ -109,6 +114,7 @@ class DatabaseService {
         intervalDistance REAL,
         intervalDays INTEGER,
         enabled INTEGER NOT NULL DEFAULT 1,
+        notificationSent INTEGER NOT NULL DEFAULT 0,
         FOREIGN KEY (machineId) REFERENCES machines (id) ON DELETE CASCADE,
         UNIQUE(machineId, maintenanceType)
       )
@@ -295,6 +301,35 @@ class DatabaseService {
       'maintenance_intervals',
       where: 'id = ?',
       whereArgs: [id],
+    );
+  }
+
+  /// Reset notification sent flag for a specific maintenance interval
+  Future<int> resetNotificationSentFlag(int machineId, String maintenanceType) async {
+    final db = await database;
+    return await db.update(
+      'maintenance_intervals',
+      {'notificationSent': 0},
+      where: 'machineId = ? AND maintenanceType = ?',
+      whereArgs: [machineId, maintenanceType],
+    );
+  }
+
+  /// Reset notification sent flags for all intervals of a machine that are back to OK status
+  Future<void> resetNotificationFlagsForOkIntervals(
+    int machineId,
+    List<String> okMaintenanceTypes,
+  ) async {
+    if (okMaintenanceTypes.isEmpty) return;
+    
+    final db = await database;
+    final placeholders = List.filled(okMaintenanceTypes.length, '?').join(',');
+    
+    await db.update(
+      'maintenance_intervals',
+      {'notificationSent': 0},
+      where: 'machineId = ? AND maintenanceType IN ($placeholders)',
+      whereArgs: [machineId, ...okMaintenanceTypes],
     );
   }
 

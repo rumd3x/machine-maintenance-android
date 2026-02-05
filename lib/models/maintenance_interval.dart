@@ -6,6 +6,7 @@ class MaintenanceInterval {
   final double? intervalDistance; // km or hours
   final int? intervalDays; // time-based interval
   final bool enabled;
+  final bool notificationSent; // Track if notification was already sent for current due status
 
   MaintenanceInterval({
     this.id,
@@ -14,6 +15,7 @@ class MaintenanceInterval {
     this.intervalDistance,
     this.intervalDays,
     this.enabled = true,
+    this.notificationSent = false,
   });
 
   /// Convert MaintenanceInterval to Map for database storage
@@ -25,6 +27,7 @@ class MaintenanceInterval {
       'intervalDistance': intervalDistance,
       'intervalDays': intervalDays,
       'enabled': enabled ? 1 : 0,
+      'notificationSent': notificationSent ? 1 : 0,
     };
   }
 
@@ -37,6 +40,7 @@ class MaintenanceInterval {
       intervalDistance: map['intervalDistance'] as double?,
       intervalDays: map['intervalDays'] as int?,
       enabled: (map['enabled'] as int) == 1,
+      notificationSent: (map['notificationSent'] as int?) == 1,
     );
   }
 
@@ -48,6 +52,7 @@ class MaintenanceInterval {
     double? intervalDistance,
     int? intervalDays,
     bool? enabled,
+    bool? notificationSent,
   }) {
     return MaintenanceInterval(
       id: id ?? this.id,
@@ -56,6 +61,7 @@ class MaintenanceInterval {
       intervalDistance: intervalDistance ?? this.intervalDistance,
       intervalDays: intervalDays ?? this.intervalDays,
       enabled: enabled ?? this.enabled,
+      notificationSent: notificationSent ?? this.notificationSent,
     );
   }
 }

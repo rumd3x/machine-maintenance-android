@@ -99,6 +99,33 @@ class MachineProvider with ChangeNotifier {
       // Reschedule notifications after maintenance is added
       final machine = getMachine(record.machineId);
       if (machine != null) {
+        // Get intervals and records to calculate new statuses
+        final intervals = await getMaintenanceIntervals(record.machineId);
+        final records = await getMaintenanceRecords(record.machineId);
+        
+        // Calculate all statuses to check which are back to OK
+        final statuses = await _calculator.calculateAllStatuses(
+          machine: machine,
+          intervals: intervals,
+          records: records,
+        );
+        
+        // Find maintenance types that are now optimal (OK status)
+        final okMaintenanceTypes = statuses.entries
+            .where((entry) => entry.value.status == MaintenanceStatusType.optimal)
+            .map((entry) => entry.key)
+            .toList();
+        
+        // Reset notification flags for maintenance types that are back to OK
+        if (okMaintenanceTypes.isNotEmpty) {
+          await _databaseService.resetNotificationFlagsForOkIntervals(
+            record.machineId,
+            okMaintenanceTypes,
+          );
+          debugPrint('Reset notification flags for: ${okMaintenanceTypes.join(", ")}');
+        }
+        
+        // Reschedule notifications
         await _scheduleNotificationsForMachine(machine);
       }
     } catch (e) {
@@ -164,6 +191,7 @@ class MachineProvider with ChangeNotifier {
       await _notificationService.scheduleMaintenanceReminders(
         machine: machine,
         statuses: statuses,
+        intervals: intervals,
       );
     } catch (e) {
       debugPrint('Error scheduling notifications for machine: $e');

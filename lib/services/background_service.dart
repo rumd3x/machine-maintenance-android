@@ -65,6 +65,7 @@ Future<void> _checkMaintenanceStatus() async {
       await notificationService.scheduleMaintenanceReminders(
         machine: machine,
         statuses: statuses,
+        intervals: intervals,
       );
     }
 

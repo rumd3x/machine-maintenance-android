@@ -4,6 +4,7 @@ import 'package:timezone/data/latest_all.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
 import '../models/machine.dart';
 import '../models/maintenance_status.dart';
+import '../models/maintenance_interval.dart';
 import '../models/app_notification.dart';
 import 'database_service.dart';
 
@@ -211,6 +212,7 @@ class NotificationService {
   Future<void> scheduleMaintenanceReminders({
     required Machine machine,
     required Map<String, MaintenanceStatus> statuses,
+    required List<MaintenanceInterval> intervals,
   }) async {
     // Cancel existing notifications for this machine
     await cancelMachineNotifications(machine.id!);
@@ -221,10 +223,29 @@ class NotificationService {
       final maintenanceType = entry.key;
       final status = entry.value;
 
+      // Find the corresponding interval
+      final interval = intervals.firstWhere(
+        (i) => i.maintenanceType == maintenanceType,
+        orElse: () => MaintenanceInterval(
+          machineId: machine.id!,
+          maintenanceType: maintenanceType,
+          enabled: false,
+        ),
+      );
+
+      // Skip if interval is not enabled or if notification was already sent
+      if (!interval.enabled) continue;
+
       // Only schedule for checkSoon and overdue statuses
       if (status.status == MaintenanceStatusType.checkSoon ||
           status.status == MaintenanceStatusType.overdue) {
         
+        // Check if notification was already sent for this maintenance
+        if (interval.notificationSent) {
+          debugPrint('Notification already sent for ${machine.displayName} - $maintenanceType, skipping...');
+          continue;
+        }
+
         final scheduledDate = _calculateNotificationDate(status);
         if (scheduledDate == null) continue;
 
@@ -251,6 +272,9 @@ class NotificationService {
             machineId: machine.id,
             saveToDb: false, // Already saved above
           );
+          
+          // Mark notification as sent
+          await _markNotificationSent(interval);
         } else {
           // For checkSoon, schedule for future
           await scheduleNotification(
@@ -262,9 +286,21 @@ class NotificationService {
             machineId: machine.id,
             saveToDb: true,
           );
+          
+          // Mark notification as sent
+          await _markNotificationSent(interval);
         }
       }
     }
+  }
+
+  /// Mark notification as sent for a maintenance interval
+  Future<void> _markNotificationSent(MaintenanceInterval interval) async {
+    if (interval.id == null) return;
+    
+    final updatedInterval = interval.copyWith(notificationSent: true);
+    await _dbService.updateMaintenanceInterval(updatedInterval);
+    debugPrint('Marked notification as sent for interval ID ${interval.id}');
   }
 
   /// Cancel all notifications for a specific machine
