@@ -1,5 +1,6 @@
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
+import 'dart:io';
 import '../models/machine.dart';
 import '../models/maintenance_record.dart';
 import '../models/maintenance_interval.dart';
@@ -396,5 +397,99 @@ class DatabaseService {
   Future<void> close() async {
     final db = await database;
     await db.close();
+  }
+
+  /// Get the database file path
+  Future<String> getDatabasePath() async {
+    return join(await getDatabasesPath(), 'machine_maintenance.db');
+  }
+
+  /// Export database to a specified directory
+  /// Returns the exported file path on success, null on failure
+  Future<String?> exportDatabase(String exportPath) async {
+    try {
+      // Close current database connection
+      await close();
+      _database = null;
+
+      // Get source database path
+      final dbPath = await getDatabasePath();
+      final dbFile = File(dbPath);
+
+      if (!await dbFile.exists()) {
+        throw Exception('Database file not found');
+      }
+
+      // Create export file with timestamp
+      final timestamp = DateTime.now().toIso8601String().replaceAll(':', '-').split('.')[0];
+      final exportFileName = 'machine_maintenance_backup_$timestamp.db';
+      final exportFilePath = join(exportPath, exportFileName);
+
+      // Copy database file
+      await dbFile.copy(exportFilePath);
+
+      // Reopen database
+      _database = await _initDatabase();
+
+      return exportFilePath;
+    } catch (e) {
+      // Ensure database is reopened even if export fails
+      _database = await _initDatabase();
+      rethrow;
+    }
+  }
+
+  /// Import database from a file
+  /// Returns true on success, false on failure
+  Future<bool> importDatabase(String importFilePath) async {
+    try {
+      final importFile = File(importFilePath);
+      
+      if (!await importFile.exists()) {
+        throw Exception('Import file not found');
+      }
+
+      // Verify it's a valid SQLite database by trying to open it
+      final testDb = await openDatabase(importFilePath, readOnly: true);
+      await testDb.close();
+
+      // Close current database connection
+      await close();
+      _database = null;
+
+      // Get destination database path
+      final dbPath = await getDatabasePath();
+
+      // Backup current database (just in case)
+      final currentDb = File(dbPath);
+      if (await currentDb.exists()) {
+        final backupPath = '$dbPath.backup';
+        await currentDb.copy(backupPath);
+      }
+
+      // Copy import file to database location
+      await importFile.copy(dbPath);
+
+      // Reopen database (this will run migrations if needed)
+      _database = await _initDatabase();
+
+      return true;
+    } catch (e) {
+      // Try to restore from backup if import failed
+      try {
+        final dbPath = await getDatabasePath();
+        final backupPath = '$dbPath.backup';
+        final backupFile = File(backupPath);
+        
+        if (await backupFile.exists()) {
+          await backupFile.copy(dbPath);
+          await backupFile.delete();
+        }
+      } catch (_) {}
+
+      // Ensure database is reopened
+      _database = await _initDatabase();
+      rethrow;
+    }
   }
 }
