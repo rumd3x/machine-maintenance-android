@@ -36,11 +36,16 @@ The app provides database export/import functionality to allow users to manually
 2. Shows confirmation dialog warning user about data replacement
 3. Closes current database connection
 4. Creates backup of current database (`.backup` extension)
-5. **Deletes current database file** (prevents table conflicts)
+5. **Deletes current database file** (prevents conflicts)
 6. Copies import file to database location
-7. Reopens database (applies any necessary migrations)
+7. Reopens database with normal initialization
+8. **Migrations run automatically** if imported database is older version
 
-**Critical**: The current database MUST be deleted before copying the import file to prevent "table already exists" errors during migration.
+**Critical**: 
+- The current database MUST be deleted before copying the import file
+- Migrations are allowed to run on imported databases to upgrade them (v1→v2→v3→v4)
+- This ensures all required tables and columns exist regardless of backup version
+- The migration system properly handles incremental upgrades
 
 **Error Handling**:
 - Attempts to restore from backup if import fails
@@ -122,10 +127,21 @@ Do you want to continue?"
 ## Best Practices
 
 1. **Always backup before import**: The import process creates an automatic backup
-2. **Delete old database**: Must delete current database to prevent migration conflicts
+2. **Delete old database**: Must delete current database before copying imported file
 3. **Validate before import**: Open imported file in read-only mode to verify it's valid SQLite
-4. **Error recovery**: Restore from backup if import fails
-5. **User confirmation**: Always show warning dialog before destructive operations
+4. **Allow migrations to run**: Imported databases need migrations to upgrade schema to current version
+5. **Error recovery**: Restore from backup if import fails
+6. **User confirmation**: Always show warning dialog before destructive operations
+7. **Version compatibility**: Import works with any database version (v1, v2, v3, v4) - migrations handle upgrades
+8. **Corruption recovery**: Database automatically recreated if initialization fails
+
+## Migration Safety
+
+All database operations use defensive patterns:
+- `CREATE TABLE IF NOT EXISTS` - prevents "table already exists" errors
+- `CREATE INDEX IF NOT EXISTS` - safe index creation
+- `ALTER TABLE` wrapped in try-catch - columns might already exist
+- Automatic corruption recovery - deletes and recreates database if initialization fails
 
 ## File Naming Convention
 

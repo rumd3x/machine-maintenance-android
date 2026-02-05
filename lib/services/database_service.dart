@@ -1,6 +1,7 @@
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import '../models/machine.dart';
 import '../models/maintenance_record.dart';
 import '../models/maintenance_interval.dart';
@@ -24,27 +25,59 @@ class DatabaseService {
   Future<Database> _initDatabase() async {
     String path = join(await getDatabasesPath(), 'machine_maintenance.db');
     
-    return await openDatabase(
-      path,
-      version: 4,
-      onCreate: _onCreate,
-      onUpgrade: _onUpgrade,
-    );
+    try {
+      return await openDatabase(
+        path,
+        version: 4,
+        onCreate: _onCreate,
+        onUpgrade: _onUpgrade,
+      );
+    } catch (e) {
+      // If database is corrupted, delete it and recreate
+      debugPrint('Database initialization failed: $e');
+      debugPrint('Attempting to recover by deleting corrupted database...');
+      
+      try {
+        final dbFile = File(path);
+        if (await dbFile.exists()) {
+          await dbFile.delete();
+        }
+        
+        // Try again with fresh database
+        return await openDatabase(
+          path,
+          version: 4,
+          onCreate: _onCreate,
+          onUpgrade: _onUpgrade,
+        );
+      } catch (e2) {
+        debugPrint('Database recovery failed: $e2');
+        rethrow;
+      }
+    }
   }
 
   Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
     if (oldVersion < 2) {
-      // Add fuelType column to machines table
-      await db.execute('ALTER TABLE machines ADD COLUMN fuelType TEXT');
+      // Add fuelType column to machines table (if not exists)
+      try {
+        await db.execute('ALTER TABLE machines ADD COLUMN fuelType TEXT');
+      } catch (e) {
+        // Column might already exist, ignore
+      }
       
-      // Add fuelAmount column to maintenance_records table
-      await db.execute('ALTER TABLE maintenance_records ADD COLUMN fuelAmount REAL');
+      // Add fuelAmount column to maintenance_records table (if not exists)
+      try {
+        await db.execute('ALTER TABLE maintenance_records ADD COLUMN fuelAmount REAL');
+      } catch (e) {
+        // Column might already exist, ignore
+      }
     }
     
     if (oldVersion < 3) {
-      // Create notifications table
+      // Create notifications table if not exists
       await db.execute('''
-        CREATE TABLE notifications(
+        CREATE TABLE IF NOT EXISTS notifications(
           id INTEGER PRIMARY KEY AUTOINCREMENT,
           title TEXT NOT NULL,
           body TEXT NOT NULL,
@@ -56,22 +89,30 @@ class DatabaseService {
       ''');
       
       // Create index for better query performance
-      await db.execute('''
-        CREATE INDEX idx_notifications_isRead 
-        ON notifications(isRead)
-      ''');
+      try {
+        await db.execute('''
+          CREATE INDEX idx_notifications_isRead 
+          ON notifications(isRead)
+        ''');
+      } catch (e) {
+        // Index might already exist, ignore
+      }
     }
     
     if (oldVersion < 4) {
-      // Add notificationSent column to maintenance_intervals table
-      await db.execute('ALTER TABLE maintenance_intervals ADD COLUMN notificationSent INTEGER NOT NULL DEFAULT 0');
+      // Add notificationSent column to maintenance_intervals table (if not exists)
+      try {
+        await db.execute('ALTER TABLE maintenance_intervals ADD COLUMN notificationSent INTEGER NOT NULL DEFAULT 0');
+      } catch (e) {
+        // Column might already exist, ignore
+      }
     }
   }
 
   Future<void> _onCreate(Database db, int version) async {
     // Create machines table
     await db.execute('''
-      CREATE TABLE machines(
+      CREATE TABLE IF NOT EXISTS machines(
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         type TEXT NOT NULL,
         brand TEXT NOT NULL,
@@ -93,7 +134,7 @@ class DatabaseService {
 
     // Create maintenance_records table
     await db.execute('''
-      CREATE TABLE maintenance_records(
+      CREATE TABLE IF NOT EXISTS maintenance_records(
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         machineId INTEGER NOT NULL,
         maintenanceType TEXT NOT NULL,
@@ -108,7 +149,7 @@ class DatabaseService {
 
     // Create maintenance_intervals table
     await db.execute('''
-      CREATE TABLE maintenance_intervals(
+      CREATE TABLE IF NOT EXISTS maintenance_intervals(
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         machineId INTEGER NOT NULL,
         maintenanceType TEXT NOT NULL,
@@ -135,20 +176,32 @@ class DatabaseService {
     ''');
 
     // Create indexes for better query performance
-    await db.execute('''
-      CREATE INDEX idx_maintenance_records_machineId 
-      ON maintenance_records(machineId)
-    ''');
+    try {
+      await db.execute('''
+        CREATE INDEX IF NOT EXISTS idx_maintenance_records_machineId 
+        ON maintenance_records(machineId)
+      ''');
+    } catch (e) {
+      // Index might already exist, ignore
+    }
 
-    await db.execute('''
-      CREATE INDEX idx_maintenance_intervals_machineId 
-      ON maintenance_intervals(machineId)
-    ''');
+    try {
+      await db.execute('''
+        CREATE INDEX IF NOT EXISTS idx_maintenance_intervals_machineId 
+        ON maintenance_intervals(machineId)
+      ''');
+    } catch (e) {
+      // Index might already exist, ignore
+    }
 
-    await db.execute('''
-      CREATE INDEX idx_notifications_isRead 
-      ON notifications(isRead)
-    ''');
+    try {
+      await db.execute('''
+        CREATE INDEX IF NOT EXISTS idx_notifications_isRead 
+        ON notifications(isRead)
+      ''');
+    } catch (e) {
+      // Index might already exist, ignore
+    }
   }
 
   // ========== Machine CRUD Operations ==========
@@ -472,7 +525,7 @@ class DatabaseService {
       // Copy import file to database location
       await importFile.copy(dbPath);
 
-      // Reopen database (this will run migrations if needed)
+      // Reopen database - migrations will run if needed to upgrade from old version
       _database = await _initDatabase();
 
       return true;
