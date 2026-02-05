@@ -66,26 +66,37 @@
   - Time-ago formatting for activities
 - ✅ `StatusIndicator` widget - Circular progress status displays
 
-### 8. Documentation
+### 8. Maintenance Intelligence System
+- ✅ `MaintenanceCalculator` service - Smart status calculation engine
+  - Distance-based tracking (km/hours)
+  - Time-based tracking (days)
+  - Dual-criteria evaluation (uses worst status)
+  - Automatic default intervals per machine type
+  - Status thresholds (optimal >70%, warning 30-70%, overdue <0%)
+- ✅ Real-time status calculation integrated in detail screen
+- ✅ Status badges on home screen cards
+- ✅ "View All" modal for complete maintenance overview
+- ✅ Smart status descriptions with remaining/overdue values
+
+### 9. Documentation
 - ✅ All requirements documented in `.github/copilot-instructions/`
 - ✅ Project README updated
 
 ## Next Steps 🚀
 
-### Phase 2: Maintenance Intelligence (Current Phase)
-1. **Maintenance Status Calculator Service** 🔄 IN PROGRESS
-   - Calculate actual status based on maintenance intervals
-   - Distance/time-based logic for each maintenance type
-   - Determine when maintenance is due (optimal/warning/overdue)
-   - Replace placeholder status with real calculations
-
-2. **Maintenance Intervals Configuration**
-   - Screen to set up intervals per maintenance type
-   - Distance-based intervals (e.g., oil change every 5000 km)
-   - Time-based intervals (e.g., oil change every 6 months)
+### Phase 3: Configuration & Polish (Current Phase)
+1. **Maintenance Intervals Configuration Screen** 🔄 IN PROGRESS
+   - View all intervals for a machine
+   - Edit distance/time intervals
    - Enable/disable specific maintenance types
+   - Add custom maintenance types
 
-### Phase 3: Enhanced Features
+2. **Edit Machine Screen**
+   - Update machine information
+   - Change photo
+   - Modify specifications
+
+### Phase 4: Enhanced Features
 1. **Maintenance History Screen**
    - List of past maintenance
    - Add new maintenance record
@@ -132,23 +143,32 @@
    - APK generation and verification
 
 ## Current Status
-**Phase**: Core UI Complete - Ready for Maintenance Intelligence
+**Phase**: Core Features Complete - Real Maintenance Intelligence Working! 🎉
 **Last Updated**: 4 de fevereiro de 2026
 
-**Key Achievement**: Full CRUD functionality for machines complete! Users can now:
-- Add machines with photos and all details
-- View machine details with beautiful UI matching reference design
-- Update odometer readings
-- Add maintenance records
-- Delete machines
+**Major Milestone**: The app now intelligently tracks maintenance and shows real status!
 
 **What Works:**
-- ✅ Home screen lists all machines
-- ✅ Add machine with photo, type, and all specs
-- ✅ View detailed machine information
-- ✅ Circular status indicators (placeholder data)
-- ✅ Maintenance history with time-ago formatting
-- ✅ Update odometer and add service records
-- ✅ All data persisted locally in SQLite
+- ✅ Complete machine CRUD (add, view, update, delete)
+- ✅ Photo management with compression
+- ✅ **REAL maintenance status calculation** based on usage
+- ✅ Distance AND time-based interval tracking
+- ✅ Auto-generated defaults per machine type
+- ✅ Status badges showing health on home screen
+- ✅ Maintenance history with timestamps
+- ✅ Update odometer to trigger status recalculation
+- ✅ Add service records that reset intervals
+- ✅ All data local (SQLite) - zero cloud dependency
 
-**What's Next:** Implement the maintenance status calculator to show real status based on intervals and usage, then add configuration screens for maintenance schedules.
+**How It Works:**
+1. Add a machine → Defaults created (oil 5000km/6mo, filters, etc.)
+2. Use the machine → Status changes as odometer increases
+3. Add service record → Status resets to optimal
+4. View detail → See top 3 critical items + "View All" for complete list
+
+**Status Colors:**
+- 🟢 Green (Optimal): >70% interval remaining
+- 🟡 Yellow (Check Soon): 30-70% remaining
+- 🔴 Red (Overdue): Past due
+
+**Ready For:** User can now add configuration screens to customize intervals, and polish features like editing machines.
