@@ -8,6 +8,7 @@ import '../widgets/machine_card.dart';
 import '../utils/app_theme.dart';
 import 'add_machine_screen.dart';
 import 'machine_detail_screen.dart';
+import 'about_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({Key? key}) : super(key: key);
@@ -68,9 +69,14 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ),
                   IconButton(
-                    icon: const Icon(Icons.notifications_outlined),
+                    icon: const Icon(Icons.info_outline),
                     onPressed: () {
-                      // TODO: Implement notifications
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const AboutScreen(),
+                        ),
+                      );
                     },
                   ),
                 ],

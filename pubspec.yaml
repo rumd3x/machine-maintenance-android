@@ -55,6 +55,9 @@ dependencies:
   
   # Simple Storage & Settings
   shared_preferences: ^2.2.2
+  
+  # URL Launcher
+  url_launcher: ^6.2.1
 
 dev_dependencies:
   flutter_test:

@@ -7,6 +7,17 @@
     <uses-permission android:name="android.permission.VIBRATE"/>
     <uses-permission android:name="android.permission.WAKE_LOCK"/>
     
+    <!-- Internet permission for opening URLs -->
+    <uses-permission android:name="android.permission.INTERNET"/>
+    
+    <!-- Query for opening web browsers -->
+    <queries>
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:scheme="https" />
+        </intent>
+    </queries>
+    
     <application
         android:label="Machine Maintenance Tracker"
         android:name="${applicationName}"
