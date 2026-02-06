@@ -147,7 +147,10 @@ pipeline {
                 script {
                     docker.image('ghcr.io/cirruslabs/flutter:latest').inside("--volumes-from ${env.HOSTNAME}") {
                         echo "Building release APK for version ${env.NEW_VERSION}+${env.NEW_BUILD_NUMBER}..."
-                        sh 'flutter build apk --release --no-pub -- --no-daemon'
+                        sh '''
+                            export GRADLE_OPTS="-Dorg.gradle.daemon=false -Xmx8G"
+                            flutter build apk --release --no-pub
+                        '''
                         
                         // Rename APK with version number
                         sh """
