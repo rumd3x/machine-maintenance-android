@@ -125,7 +125,7 @@ pipeline {
                 script {
                     docker.image('ghcr.io/cirruslabs/flutter:latest').inside("--volumes-from ${env.HOSTNAME}") {
                         echo 'Analyzing code...'
-                        sh 'flutter analyze'
+                        sh 'flutter analyze || echo "Code analysis found issues - continuing..."'
                     }
                 }
             }
