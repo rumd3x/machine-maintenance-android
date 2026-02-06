@@ -3,6 +3,7 @@ pipeline {
         docker {
             image 'cirrusci/flutter:stable'
             label 'docker'
+            args "-v \${WORKSPACE}:\${WORKSPACE} -w \${WORKSPACE}"
         }
     }
     
