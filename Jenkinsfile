@@ -36,7 +36,7 @@ pipeline {
         stage('Calculate New Version') {
             steps {
                 script {
-                    docker.image('cirrusci/flutter:stable').inside("-u root:root -v ${env.WORKSPACE}:${env.WORKSPACE} -w ${env.WORKSPACE}") {
+                    docker.image('cirrusci/flutter:stable').inside("-u root:root -w ${env.WORKSPACE}") {
                         echo "Release type: ${params.RELEASE_TYPE}"
                         
                         // Extract current version from pubspec.yaml
@@ -92,7 +92,7 @@ pipeline {
         stage('Update Version') {
             steps {
                 script {
-                    docker.image('cirrusci/flutter:stable').inside("-u root:root -v ${env.WORKSPACE}:${env.WORKSPACE} -w ${env.WORKSPACE}") {
+                    docker.image('cirrusci/flutter:stable').inside("-u root:root -w ${env.WORKSPACE}") {
                         echo "Updating version to ${env.NEW_VERSION}+${env.NEW_BUILD_NUMBER}..."
                         
                         // Make sure script is executable
@@ -112,7 +112,7 @@ pipeline {
         stage('Get Dependencies') {
             steps {
                 script {
-                    docker.image('cirrusci/flutter:stable').inside("-u root:root -v ${env.WORKSPACE}:${env.WORKSPACE} -w ${env.WORKSPACE}") {
+                    docker.image('cirrusci/flutter:stable').inside("-u root:root -w ${env.WORKSPACE}") {
                         echo 'Fetching Flutter dependencies...'
                         sh 'flutter pub get'
                     }
@@ -123,7 +123,7 @@ pipeline {
         stage('Analyze Code') {
             steps {
                 script {
-                    docker.image('cirrusci/flutter:stable').inside("-u root:root -v ${env.WORKSPACE}:${env.WORKSPACE} -w ${env.WORKSPACE}") {
+                    docker.image('cirrusci/flutter:stable').inside("-u root:root -w ${env.WORKSPACE}") {
                         echo 'Analyzing code...'
                         sh 'flutter analyze'
                     }
@@ -134,7 +134,7 @@ pipeline {
         stage('Run Tests') {
             steps {
                 script {
-                    docker.image('cirrusci/flutter:stable').inside("-u root:root -v ${env.WORKSPACE}:${env.WORKSPACE} -w ${env.WORKSPACE}") {
+                    docker.image('cirrusci/flutter:stable').inside("-u root:root -w ${env.WORKSPACE}") {
                         echo 'Running tests...'
                         sh 'flutter test || echo "No tests found or tests failed - continuing..."'
                     }
@@ -145,7 +145,7 @@ pipeline {
         stage('Build Release APK') {
             steps {
                 script {
-                    docker.image('cirrusci/flutter:stable').inside("-u root:root -v ${env.WORKSPACE}:${env.WORKSPACE} -w ${env.WORKSPACE}") {
+                    docker.image('cirrusci/flutter:stable').inside("-u root:root -w ${env.WORKSPACE}") {
                         echo "Building release APK for version ${env.NEW_VERSION}+${env.NEW_BUILD_NUMBER}..."
                         sh 'flutter build apk --release'
                         

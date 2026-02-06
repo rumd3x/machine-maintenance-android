@@ -26,14 +26,15 @@ agent {
 }
 
 // Each stage uses:
-docker.image('cirrusci/flutter:stable').inside("-u root:root -v ${env.WORKSPACE}:${env.WORKSPACE} -w ${env.WORKSPACE}") {
+docker.image('cirrusci/flutter:stable').inside("-u root:root -w ${env.WORKSPACE}") {
     sh 'flutter build apk'
 }
 ```
 
 **Key Points**:
 - Jenkins node must have access to host Docker socket (`/var/run/docker.sock`)
-- Explicit workspace volume mounting prevents path mismatch issues
+- Workspace is automatically mounted by Jenkins (no explicit -v needed)
+- Working directory set to workspace path
 - Uses host Docker daemon, avoiding Docker-in-Docker nesting
 - Each stage runs in isolated Flutter container with consistent environment
 

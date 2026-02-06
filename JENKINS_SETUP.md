@@ -253,10 +253,11 @@ From GitHub:
    -v /var/run/docker.sock:/var/run/docker.sock
    ```
 
-2. **Use matching workspace paths**: The Jenkinsfile now explicitly mounts workspace with:
+2. **Let Jenkins handle workspace mounting**: The Jenkinsfile sets working directory but lets Jenkins mount the workspace automatically:
    ```groovy
-   docker.image('cirrusci/flutter:stable').inside("-u root:root -v ${env.WORKSPACE}:${env.WORKSPACE} -w ${env.WORKSPACE}")
+   docker.image('cirrusci/flutter:stable').inside("-u root:root -w ${env.WORKSPACE}")
    ```
+   Note: No explicit `-v` mount needed - Jenkins handles this automatically
 
 3. **Verify Docker socket is accessible**:
    ```bash
