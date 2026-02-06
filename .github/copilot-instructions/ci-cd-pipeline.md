@@ -9,18 +9,40 @@ Automated Jenkins CI/CD pipeline for building, versioning, and releasing the Mac
 ## Pipeline Architecture
 
 ### Infrastructure
-- **Jenkins Node**: `docker` (requires Docker plugin)
+- **Jenkins Node**: `docker` (requires Docker plugin and host Docker access)
 - **Docker Image**: `cirrusci/flutter:stable` (official Flutter Docker image)
-- **Execution**: All build steps run inside Docker container
+- **Execution**: Each build stage runs inside Docker container using host Docker daemon
 - **Trigger**: Manual (parameterized build)
 
 ### Docker Strategy
 
-The pipeline uses `docker.image('cirrusci/flutter:stable').inside()` to:
-- Eliminate need to install Flutter on Jenkins host
-- Ensure consistent build environment across all builds
-- Isolate dependencies and avoid conflicts
-- Use official, pre-configured Flutter environment
+The pipeline uses Docker containers for each stage while leveraging the host's Docker daemon:
+
+```groovy
+agent {
+    node {
+        label 'docker'
+    }
+}
+
+// Each stage uses:
+docker.image('cirrusci/flutter:stable').inside("-u root:root -v ${env.WORKSPACE}:${env.WORKSPACE} -w ${env.WORKSPACE}") {
+    sh 'flutter build apk'
+}
+```
+
+**Key Points**:
+- Jenkins node must have access to host Docker socket (`/var/run/docker.sock`)
+- Explicit workspace volume mounting prevents path mismatch issues
+- Uses host Docker daemon, avoiding Docker-in-Docker nesting
+- Each stage runs in isolated Flutter container with consistent environment
+
+Benefits:
+- ✅ No Flutter installation needed on Jenkins host
+- ✅ Consistent build environment across all builds
+- ✅ Avoids Docker-in-Docker complexity
+- ✅ Uses official, pre-configured Flutter environment
+- ✅ Proper workspace isolation and cleanup
 
 ## Build Parameters
 

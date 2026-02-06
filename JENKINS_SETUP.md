@@ -19,7 +19,11 @@ Quick setup guide for configuring Jenkins to run the CI/CD pipeline.
 
 ## Step 2: Configure Docker Node
 
-### Give Jenkins Access to Docker
+### Configure Jenkins to Use Host Docker Daemon
+
+**Important**: If your Jenkins is running in a Docker container, you need to mount the host's Docker socket so Jenkins can use the host Docker daemon instead of nesting containers.
+
+#### If Jenkins Runs on Host (Not in Container)
 
 ```bash
 # Add jenkins user to docker group
@@ -30,6 +34,55 @@ sudo systemctl restart jenkins
 
 # Verify (run as jenkins user)
 sudo -u jenkins docker ps
+```
+
+#### If Jenkins Runs in Docker Container
+
+When starting your Jenkins container, mount the Docker socket:
+
+```bash
+docker run -d \
+  --name jenkins \
+  -p 8080:8080 -p 50000:50000 \
+  -v jenkins_home:/var/jenkins_home \
+  -v /var/run/docker.sock:/var/run/docker.sock \
+  -v $(which docker):/usr/bin/docker \
+  jenkins/jenkins:lts
+```
+
+**Or if using docker-compose:**
+
+```yaml
+version: '3'
+services:
+  jenkins:
+    image: jenkins/jenkins:lts
+    ports:
+      - "8080:8080"
+      - "50000:50000"
+    volumes:
+      - jenkins_home:/var/jenkins_home
+      - /var/run/docker.sock:/var/run/docker.sock  # Mount host Docker socket
+      - /usr/bin/docker:/usr/bin/docker            # Mount Docker binary
+    user: root  # Required to access Docker socket
+volumes:
+  jenkins_home:
+```
+
+Then give Jenkins access inside the container:
+
+```bash
+# Enter Jenkins container
+docker exec -it jenkins bash
+
+# Install Docker CLI (if not already present)
+apt-get update && apt-get install -y docker.io
+
+# Add jenkins user to docker group (inside container)
+usermod -aG docker jenkins
+
+# Restart Jenkins container
+docker restart jenkins
 ```
 
 ### Label a Node as "docker"
@@ -188,6 +241,33 @@ From GitHub:
 - Download APK from Assets
 
 ## Troubleshooting
+
+### Error: "process apparently never started" or Docker workspace mounting issues
+
+**Problem**: Jenkins is running in a container without proper Docker socket mounting, or workspace paths don't match between host and container
+
+**Solutions**:
+
+1. **Mount Docker socket** from host into Jenkins container:
+   ```bash
+   -v /var/run/docker.sock:/var/run/docker.sock
+   ```
+
+2. **Use matching workspace paths**: The Jenkinsfile now explicitly mounts workspace with:
+   ```groovy
+   docker.image('cirrusci/flutter:stable').inside("-u root:root -v ${env.WORKSPACE}:${env.WORKSPACE} -w ${env.WORKSPACE}")
+   ```
+
+3. **Verify Docker socket is accessible**:
+   ```bash
+   # Inside Jenkins container
+   docker ps
+   # Should work without errors
+   ```
+
+4. **Check Jenkins logs** for workspace path mismatches:
+   - Look for messages about paths not being found
+   - Ensure workspace path is consistent between Jenkins and Docker container
 
 ### Error: "Required context class hudson.FilePath is missing"
 
