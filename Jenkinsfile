@@ -17,7 +17,6 @@ pipeline {
         GITHUB_CREDENTIALS_ID = 'github-credentials'  // Update with your Jenkins credential ID
         GITHUB_REPO = 'rumd3x/machine-maintenance-android'  // Update with your GitHub repo
         APP_NAME = 'machine-maintenance'
-        GRADLE_OPTS = '-Dorg.gradle.daemon=false -Dorg.gradle.jvmargs=-Xmx2048m'
     }
     
     stages {
