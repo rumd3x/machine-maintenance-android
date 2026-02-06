@@ -85,6 +85,8 @@ pipeline {
                     echo "New version will be: ${newVersion}+${build}"
                     echo "Git tag will be: ${env.VERSION_TAG}"
                     }
+                }
+            }
         }
         
         stage('Update Version') {
