@@ -1,6 +1,20 @@
 # Development Progress
 
-**Last Updated**: 5 de fevereiro de 2026
+**Last Updated**: 2026-02-05
+
+## Recent Updates
+
+### 2026-02-05: Centralized Version Management
+- ✅ Created centralized version constants in `lib/utils/constants.dart`
+  - `appVersion = '1.0.0'`
+  - `appBuildNumber = 1`
+- ✅ Updated `about_screen.dart` to use centralized version constant
+- ✅ Created automated version update script: `scripts/update_version.sh`
+- ✅ Documented version management workflow
+- ✅ Version synchronized between:
+  - `lib/utils/constants.dart` (display in app)
+  - `pubspec.yaml` (build configuration)
+  - Android build automatically reads from pubspec.yaml
 
 ## Completed ✅
 
@@ -219,6 +233,14 @@
 - 🔴 Red (Overdue): Past due
 
 ## Recent Updates (5 de fevereiro de 2026)
+
+### Machine Type Display
+- ✅ Added machine type display to home screen machine cards
+- ✅ Displayed as small chip/badge next to odometer reading
+- ✅ Added machine type display to machine detail screen
+- ✅ Displayed with icon below brand/model in info card
+- ✅ Uses discrete styling with secondary text color
+- ✅ Machine type icons match those used in add/edit screens
 
 ### Maintenance History Screen
 - ✅ Created `MaintenanceHistoryScreen` to view all maintenance records

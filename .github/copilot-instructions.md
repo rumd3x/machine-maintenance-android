@@ -86,8 +86,20 @@ When modifying either `add_machine_screen.dart` or `edit_machine_screen.dart`, *
 ### Constants Usage:
 
 Always import and use constants from `lib/utils/constants.dart`:
-- `machineTypeVehicle`, `machineTypeMotorcycle`, `machineTypeGenerator`, `machineTypeMachine`
-- `odometerUnitKm`, `odometerUnitHours`
+- **App Version**: `appVersion`, `appBuildNumber` (centralized version management)
+- **Machine Types**: `machineTypeVehicle`, `machineTypeMotorcycle`, `machineTypeGenerator`, `machineTypeMachine`
+- **Odometer Units**: `odometerUnitKm`, `odometerUnitHours`
+
+### Version Management
+
+**App version is centralized** in `lib/utils/constants.dart` and `pubspec.yaml`.
+
+To update version:
+```bash
+./scripts/update_version.sh 1.1.0 2  # version + build number
+```
+
+This automatically updates both files. See [version-management.md](copilot-instructions/version-management.md) for details.
 
 ### Import Order:
 

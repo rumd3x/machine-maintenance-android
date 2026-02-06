@@ -237,6 +237,26 @@ class _MachineDetailScreenState extends State<MachineDetailScreen> {
                 color: AppTheme.textAccent,
               ),
             ),
+            const SizedBox(height: 8),
+            
+            // Machine Type
+            Row(
+              children: [
+                Icon(
+                  _getMachineTypeIcon(),
+                  size: 14,
+                  color: AppTheme.textSecondary,
+                ),
+                const SizedBox(width: 4),
+                Text(
+                  machineTypeNames[_machine!.type] ?? _machine!.type,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: AppTheme.textSecondary,
+                    fontSize: 12,
+                  ),
+                ),
+              ],
+            ),
             
             const SizedBox(height: 16),
             const Divider(),
@@ -615,6 +635,21 @@ class _MachineDetailScreenState extends State<MachineDetailScreen> {
         ),
       ),
     );
+  }
+
+  IconData _getMachineTypeIcon() {
+    switch (_machine!.type) {
+      case machineTypeVehicle:
+        return Icons.directions_car;
+      case machineTypeMotorcycle:
+        return Icons.motorcycle;
+      case machineTypeGenerator:
+        return Icons.power;
+      case machineTypeMachine:
+        return Icons.precision_manufacturing;
+      default:
+        return Icons.build;
+    }
   }
 
   IconData _getMaintenanceIcon(String type) {

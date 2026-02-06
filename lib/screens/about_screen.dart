@@ -4,6 +4,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:path_provider/path_provider.dart';
 import 'dart:io';
 import '../utils/app_theme.dart';
+import '../utils/constants.dart';
 import '../services/database_service.dart';
 
 class AboutScreen extends StatefulWidget {
@@ -14,7 +15,6 @@ class AboutScreen extends StatefulWidget {
 }
 
 class _AboutScreenState extends State<AboutScreen> {
-  static const String appVersion = '1.0.0';
   static const String authorName = 'Rumd3x';
   static const String authorWebsite = 'edmurcardoso.com.br';
   static const String websiteUrl = 'https://edmurcardoso.com.br';

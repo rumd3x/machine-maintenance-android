@@ -24,6 +24,8 @@ Reference screenshot provided showing a dark-themed motorcycle maintenance app.
 ### Machine Card Display
 - Large hero image of the machine
 - Machine name/nickname prominently displayed
+- Machine type displayed as small chip/badge (discrete)
+- Odometer reading next to machine type
 - Machine model/year subtitle
 - Connection status indicator
 - Key metrics displayed:
