@@ -239,6 +239,19 @@ Navigator.push(
 
 **NOT** with `machine` object (outdated pattern).
 
+### CI/CD Pipeline
+
+**Jenkins pipeline** automates releases with Docker:
+- Runs on `docker` node using `cirrusci/flutter:stable` image
+- Parameterized builds: `patch`, `minor`, `major`
+- Automatically increments version and build number
+- Builds release APK, commits version, creates git tag
+- Publishes GitHub release with APK attachment
+
+**Pipeline stages**: Checkout → Calculate Version → Update Version → Dependencies → Analyze → Test → Build → Commit → Tag → Push → GitHub Release → Archive
+
+See [ci-cd-pipeline.md](copilot-instructions/ci-cd-pipeline.md) for complete documentation.
+
 ### Critical Dependencies
 
 - `workmanager: ^0.9.0` - Background task execution

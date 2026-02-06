@@ -4,6 +4,15 @@
 
 ## Recent Updates
 
+### 2026-02-05: CI/CD Pipeline with Automated Releases
+- ✅ Complete Jenkins pipeline for automated releases
+- ✅ Docker-based build environment (cirrusci/flutter:stable)
+- ✅ Parameterized builds (patch/minor/major release types)
+- ✅ Automatic version calculation and increment
+- ✅ GitHub release creation with APK attachment
+- ✅ Git tagging and version commit automation
+- ✅ Comprehensive CI/CD documentation
+
 ### 2026-02-05: Centralized Version Management
 - ✅ Created centralized version constants in `lib/utils/constants.dart`
   - `appVersion = '1.0.0'`
