@@ -1,6 +1,7 @@
 pipeline {
     agent {
-        node {
+        docker {
+            image 'cirrusci/flutter:stable'
             label 'docker'
         }
     }
@@ -36,127 +37,105 @@ pipeline {
         stage('Calculate New Version') {
             steps {
                 script {
-                    docker.image('cirrusci/flutter:stable').inside("-u root:root -w ${env.WORKSPACE}") {
-                        echo "Release type: ${params.RELEASE_TYPE}"
-                        
-                        // Extract current version from pubspec.yaml
-                        def versionLine = sh(
-                            script: "grep '^version:' pubspec.yaml | head -1",
-                            returnStdout: true
-                        ).trim()
-                        
-                        def versionMatch = (versionLine =~ /version:\s*(\d+)\.(\d+)\.(\d+)\+(\d+)/)
-                        if (!versionMatch) {
-                            error("Could not parse version from pubspec.yaml")
-                        }
-                        
-                        def major = versionMatch[0][1] as Integer
-                        def minor = versionMatch[0][2] as Integer
-                        def patch = versionMatch[0][3] as Integer
-                        def build = versionMatch[0][4] as Integer
-                        
-                        def currentVersion = "${major}.${minor}.${patch}"
-                        echo "Current version: ${currentVersion}+${build}"
-                        
-                        // Calculate new version based on release type
-                        switch(params.RELEASE_TYPE) {
-                            case 'major':
-                                major++
-                                minor = 0
-                                patch = 0
-                                break
-                            case 'minor':
-                                minor++
-                                patch = 0
-                                break
-                            case 'patch':
-                                patch++
-                                break
-                        }
-                        
-                        // Increment build number
-                        build++
-                        
-                        def newVersion = "${major}.${minor}.${patch}"
-                        env.NEW_VERSION = newVersion
-                        env.NEW_BUILD_NUMBER = build.toString()
-                        env.VERSION_TAG = "v${newVersion}"
-                        
-                        echo "New version will be: ${newVersion}+${build}"
-                        echo "Git tag will be: ${env.VERSION_TAG}"
+                    echo "Release type: ${params.RELEASE_TYPE}"
+                    
+                    // Extract current version from pubspec.yaml
+                    def versionLine = sh(
+                        script: "grep '^version:' pubspec.yaml | head -1",
+                        returnStdout: true
+                    ).trim()
+                    
+                    def versionMatch = (versionLine =~ /version:\s*(\d+)\.(\d+)\.(\d+)\+(\d+)/)
+                    if (!versionMatch) {
+                        error("Could not parse version from pubspec.yaml")
                     }
+                    
+                    def major = versionMatch[0][1] as Integer
+                    def minor = versionMatch[0][2] as Integer
+                    def patch = versionMatch[0][3] as Integer
+                    def build = versionMatch[0][4] as Integer
+                    
+                    def currentVersion = "${major}.${minor}.${patch}"
+                    echo "Current version: ${currentVersion}+${build}"
+                    
+                    // Calculate new version based on release type
+                    switch(params.RELEASE_TYPE) {
+                        case 'major':
+                            major++
+                            minor = 0
+                            patch = 0
+                            break
+                        case 'minor':
+                            minor++
+                            patch = 0
+                            break
+                        case 'patch':
+                            patch++
+                            break
+                    }
+                    
+                    // Increment build number
+                    build++
+                    
+                    def newVersion = "${major}.${minor}.${patch}"
+                    env.NEW_VERSION = newVersion
+                    env.NEW_BUILD_NUMBER = build.toString()
+                    env.VERSION_TAG = "v${newVersion}"
+                    
+                    echo "New version will be: ${newVersion}+${build}"
+                    echo "Git tag will be: ${env.VERSION_TAG}"
                 }
             }
         }
         
         stage('Update Version') {
             steps {
-                script {
-                    docker.image('cirrusci/flutter:stable').inside("-u root:root -w ${env.WORKSPACE}") {
-                        echo "Updating version to ${env.NEW_VERSION}+${env.NEW_BUILD_NUMBER}..."
-                        
-                        // Make sure script is executable
-                        sh 'chmod +x scripts/update_version.sh'
-                        
-                        // Run version update script
-                        sh "./scripts/update_version.sh ${env.NEW_VERSION} ${env.NEW_BUILD_NUMBER}"
-                        
-                        // Verify the update
-                        sh 'cat pubspec.yaml | grep "^version:"'
-                        sh 'cat lib/utils/constants.dart | grep -A 1 "appVersion"'
-                    }
-                }
+                echo "Updating version to ${env.NEW_VERSION}+${env.NEW_BUILD_NUMBER}..."
+                
+                // Make sure script is executable
+                sh 'chmod +x scripts/update_version.sh'
+                
+                // Run version update script
+                sh "./scripts/update_version.sh ${env.NEW_VERSION} ${env.NEW_BUILD_NUMBER}"
+                
+                // Verify the update
+                sh 'cat pubspec.yaml | grep "^version:"'
+                sh 'cat lib/utils/constants.dart | grep -A 1 "appVersion"'
             }
         }
         
         stage('Get Dependencies') {
             steps {
-                script {
-                    docker.image('cirrusci/flutter:stable').inside("-u root:root -w ${env.WORKSPACE}") {
-                        echo 'Fetching Flutter dependencies...'
-                        sh 'flutter pub get'
-                    }
-                }
+                echo 'Fetching Flutter dependencies...'
+                sh 'flutter pub get'
             }
         }
         
         stage('Analyze Code') {
             steps {
-                script {
-                    docker.image('cirrusci/flutter:stable').inside("-u root:root -w ${env.WORKSPACE}") {
-                        echo 'Analyzing code...'
-                        sh 'flutter analyze'
-                    }
-                }
+                echo 'Analyzing code...'
+                sh 'flutter analyze'
             }
         }
         
         stage('Run Tests') {
             steps {
-                script {
-                    docker.image('cirrusci/flutter:stable').inside("-u root:root -w ${env.WORKSPACE}") {
-                        echo 'Running tests...'
-                        sh 'flutter test || echo "No tests found or tests failed - continuing..."'
-                    }
-                }
+                echo 'Running tests...'
+                sh 'flutter test || echo "No tests found or tests failed - continuing..."'
             }
         }
         
         stage('Build Release APK') {
             steps {
-                script {
-                    docker.image('cirrusci/flutter:stable').inside("-u root:root -w ${env.WORKSPACE}") {
-                        echo "Building release APK for version ${env.NEW_VERSION}+${env.NEW_BUILD_NUMBER}..."
-                        sh 'flutter build apk --release'
-                        
-                        // Rename APK with version number
-                        sh """
-                            cd build/app/outputs/flutter-apk/
-                            cp app-release.apk ${env.APP_NAME}-${env.NEW_VERSION}-${env.NEW_BUILD_NUMBER}.apk
-                            ls -lh *.apk
-                        """
-                    }
-                }
+                echo "Building release APK for version ${env.NEW_VERSION}+${env.NEW_BUILD_NUMBER}..."
+                sh 'flutter build apk --release'
+                
+                // Rename APK with version number
+                sh """
+                    cd build/app/outputs/flutter-apk/
+                    cp app-release.apk ${env.APP_NAME}-${env.NEW_VERSION}-${env.NEW_BUILD_NUMBER}.apk
+                    ls -lh *.apk
+                """
             }
         }
         

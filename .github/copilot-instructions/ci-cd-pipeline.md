@@ -9,41 +9,38 @@ Automated Jenkins CI/CD pipeline for building, versioning, and releasing the Mac
 ## Pipeline Architecture
 
 ### Infrastructure
-- **Jenkins Node**: `docker` (requires Docker plugin and host Docker access)
+- **Jenkins Node**: Docker plugin with access to Docker daemon
 - **Docker Image**: `cirrusci/flutter:stable` (official Flutter Docker image)
-- **Execution**: Each build stage runs inside Docker container using host Docker daemon
+- **Execution**: Entire pipeline runs inside single Flutter Docker container as agent
 - **Trigger**: Manual (parameterized build)
 
 ### Docker Strategy
 
-The pipeline uses Docker containers for each stage while leveraging the host's Docker daemon:
+The pipeline uses a Docker container as the primary agent:
 
 ```groovy
 agent {
-    node {
+    docker {
+        image 'cirrusci/flutter:stable'
         label 'docker'
     }
-}
-
-// Each stage uses:
-docker.image('cirrusci/flutter:stable').inside("-u root:root -w ${env.WORKSPACE}") {
-    sh 'flutter build apk'
 }
 ```
 
 **Key Points**:
-- Jenkins node must have access to host Docker socket (`/var/run/docker.sock`)
-- Workspace is automatically mounted by Jenkins (no explicit -v needed)
-- Working directory set to workspace path
-- Uses host Docker daemon, avoiding Docker-in-Docker nesting
-- Each stage runs in isolated Flutter container with consistent environment
+- Jenkins spins up Flutter container once at pipeline start
+- All stages execute inside this container
+- No nested Docker containers
+- Clean, simple execution model
+- Workspace automatically mounted by Jenkins Docker plugin
 
 Benefits:
 - ✅ No Flutter installation needed on Jenkins host
-- ✅ Consistent build environment across all builds
-- ✅ Avoids Docker-in-Docker complexity
+- ✅ Consistent build environment for entire pipeline
+- ✅ No Docker-in-Docker complexity
+- ✅ No workspace mounting issues
 - ✅ Uses official, pre-configured Flutter environment
-- ✅ Proper workspace isolation and cleanup
+- ✅ Faster execution (container starts once, not per stage)
 
 ## Build Parameters
 
