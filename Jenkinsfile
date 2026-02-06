@@ -1,6 +1,7 @@
 pipeline {
     agent {
-        node {
+        docker {
+            image 'ghcr.io/cirruslabs/flutter:latest'
             label 'docker'
         }
     }
@@ -36,14 +37,13 @@ pipeline {
         stage('Calculate New Version') {
             steps {
                 script {
-                    docker.image('ghcr.io/cirruslabs/flutter:latest').inside("--volumes-from ${env.HOSTNAME}") {
-                        echo "Release type: ${params.RELEASE_TYPE}"
-                        
-                        // Extract current version from pubspec.yaml
-                        def versionLine = sh(
-                            script: "grep '^version:' pubspec.yaml | head -1",
-                            returnStdout: true
-                        ).trim()
+                    echo "Release type: ${params.RELEASE_TYPE}"
+                    
+                    // Extract current version from pubspec.yaml
+                    def versionLine = sh(
+                        script: "grep '^version:' pubspec.yaml | head -1",
+                        returnStdout: true
+                    ).trim()
                     
                     def versionMatch = (versionLine =~ /version:\s*(\d+)\.(\d+)\.(\d+)\+(\d+)/)
                     if (!versionMatch) {
@@ -84,16 +84,13 @@ pipeline {
                     
                     echo "New version will be: ${newVersion}+${build}"
                     echo "Git tag will be: ${env.VERSION_TAG}"
-                    }
                 }
             }
         }
         
         stage('Update Version') {
             steps {
-                script {
-                    docker.image('ghcr.io/cirruslabs/flutter:latest').inside("--volumes-from ${env.HOSTNAME}") {
-                        echo "Updating version to ${env.NEW_VERSION}+${env.NEW_BUILD_NUMBER}..."
+                echo "Updating version to ${env.NEW_VERSION}+${env.NEW_BUILD_NUMBER}..."
                 
                 // Make sure script is executable
                 sh 'chmod +x scripts/update_version.sh'
@@ -101,65 +98,44 @@ pipeline {
                 // Run version update script
                 sh "./scripts/update_version.sh ${env.NEW_VERSION} ${env.NEW_BUILD_NUMBER}"
                 
-                        // Verify the update
-                        sh 'cat pubspec.yaml | grep "^version:"'
-                        sh 'cat lib/utils/constants.dart | grep -A 1 "appVersion"'
-                    }
-                }
+                // Verify the update
+                sh 'cat pubspec.yaml | grep "^version:"'
+                sh 'cat lib/utils/constants.dart | grep -A 1 "appVersion"'
             }
         }
         
         stage('Get Dependencies') {
             steps {
-                script {
-                    docker.image('ghcr.io/cirruslabs/flutter:latest').inside("--volumes-from ${env.HOSTNAME}") {
-                        echo 'Fetching Flutter dependencies...'
-                        sh 'flutter pub get'
-                    }
-                }
+                echo 'Fetching Flutter dependencies...'
+                sh 'flutter pub get'
             }
         }
         
         stage('Analyze Code') {
             steps {
-                script {
-                    docker.image('ghcr.io/cirruslabs/flutter:latest').inside("--volumes-from ${env.HOSTNAME}") {
-                        echo 'Analyzing code...'
-                        sh 'flutter analyze || echo "Code analysis found issues - continuing..."'
-                    }
-                }
+                echo 'Analyzing code...'
+                sh 'flutter analyze || echo "Code analysis found issues - continuing..."'
             }
         }
         
         stage('Run Tests') {
             steps {
-                script {
-                    docker.image('ghcr.io/cirruslabs/flutter:latest').inside("--volumes-from ${env.HOSTNAME}") {
-                        echo 'Running tests...'
-                        sh 'flutter test || echo "No tests found or tests failed - continuing..."'
-                    }
-                }
+                echo 'Running tests...'
+                sh 'flutter test || echo "No tests found or tests failed - continuing..."'
             }
         }
         
         stage('Build Release APK') {
             steps {
-                script {
-                    docker.image('ghcr.io/cirruslabs/flutter:latest').inside("--volumes-from ${env.HOSTNAME}") {
-                        echo "Building release APK for version ${env.NEW_VERSION}+${env.NEW_BUILD_NUMBER}..."
-                        sh '''
-                            export GRADLE_OPTS="-Dorg.gradle.daemon=false -Xmx8G"
-                            flutter build apk --release --no-pub
-                        '''
-                        
-                        // Rename APK with version number
-                        sh """
-                            cd build/app/outputs/flutter-apk/
-                            cp app-release.apk ${env.APP_NAME}-${env.NEW_VERSION}-${env.NEW_BUILD_NUMBER}.apk
-                            ls -lh *.apk
-                        """
-                    }
-                }
+                echo "Building release APK for version ${env.NEW_VERSION}+${env.NEW_BUILD_NUMBER}..."
+                sh "flutter build apk --release"
+                
+                // Rename APK with version number
+                sh """
+                    cd build/app/outputs/flutter-apk/
+                    cp app-release.apk ${env.APP_NAME}-${env.NEW_VERSION}-${env.NEW_BUILD_NUMBER}.apk
+                    ls -lh *.apk
+                """
             }
         }
         
