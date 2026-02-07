@@ -379,7 +379,7 @@ class _MachineDetailScreenState extends State<MachineDetailScreen> {
               ),
               Row(
                 children: [
-                  TextButton(
+                  OutlinedButton.icon(
                     onPressed: () {
                       Navigator.push(
                         context,
@@ -390,11 +390,24 @@ class _MachineDetailScreenState extends State<MachineDetailScreen> {
                         ),
                       ).then((_) => _loadData());
                     },
-                    child: const Text('Configure'),
+                    icon: const Icon(Icons.settings, size: 16),
+                    label: const Text('Configure'),
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      minimumSize: Size.zero,
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    ),
                   ),
-                  TextButton(
+                  const SizedBox(width: 8),
+                  OutlinedButton.icon(
                     onPressed: _showAllStatuses,
-                    child: const Text('View All'),
+                    icon: const Icon(Icons.list, size: 16),
+                    label: const Text('View All'),
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      minimumSize: Size.zero,
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    ),
                   ),
                 ],
               ),
@@ -405,10 +418,13 @@ class _MachineDetailScreenState extends State<MachineDetailScreen> {
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: displayStatuses.map((entry) {
               final label = maintenanceTypeNames[entry.key] ?? entry.key;
-              return StatusIndicator(
-                label: label,
-                status: entry.value.status,
-                icon: _getMaintenanceIcon(entry.key),
+              return GestureDetector(
+                onTap: () => _addMaintenance(preselectType: entry.key),
+                child: StatusIndicator(
+                  label: label,
+                  status: entry.value.status,
+                  icon: _getMaintenanceIcon(entry.key),
+                ),
               );
             }).toList(),
           ),
@@ -557,7 +573,7 @@ class _MachineDetailScreenState extends State<MachineDetailScreen> {
                 style: Theme.of(context).textTheme.displaySmall,
               ),
               if (_records.isNotEmpty)
-                TextButton(
+                OutlinedButton.icon(
                   onPressed: () {
                     Navigator.push(
                       context,
@@ -568,7 +584,13 @@ class _MachineDetailScreenState extends State<MachineDetailScreen> {
                       ),
                     ).then((_) => _loadData());
                   },
-                  child: const Text('View All'),
+                  icon: const Icon(Icons.list, size: 16),
+                  label: const Text('View All'),
+                  style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    minimumSize: Size.zero,
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  ),
                 ),
             ],
           ),
@@ -706,10 +728,13 @@ class _MachineDetailScreenState extends State<MachineDetailScreen> {
     });
   }
 
-  void _addMaintenance() {
+  void _addMaintenance({String? preselectType}) {
     showDialog(
       context: context,
-      builder: (context) => _AddMaintenanceDialog(machine: _machine!),
+      builder: (context) => _AddMaintenanceDialog(
+        machine: _machine!,
+        initialType: preselectType,
+      ),
     ).then((added) {
       if (added == true) {
         _loadData();
@@ -864,15 +889,19 @@ class _UpdateOdometerDialogState extends State<_UpdateOdometerDialog> {
 // Add Maintenance Dialog
 class _AddMaintenanceDialog extends StatefulWidget {
   final Machine machine;
+  final String? initialType;
 
-  const _AddMaintenanceDialog({required this.machine});
+  const _AddMaintenanceDialog({
+    required this.machine,
+    this.initialType,
+  });
 
   @override
   State<_AddMaintenanceDialog> createState() => _AddMaintenanceDialogState();
 }
 
 class _AddMaintenanceDialogState extends State<_AddMaintenanceDialog> {
-  String _selectedType = maintenanceTypeOilChange;
+  late String _selectedType;
   late TextEditingController _notesController;
   late TextEditingController _odometerController;
   late TextEditingController _fuelAmountController;
@@ -882,6 +911,7 @@ class _AddMaintenanceDialogState extends State<_AddMaintenanceDialog> {
   @override
   void initState() {
     super.initState();
+    _selectedType = widget.initialType ?? maintenanceTypeOilChange;
     _notesController = TextEditingController();
     _odometerController = TextEditingController(
       text: widget.machine.currentOdometer.toStringAsFixed(1),
