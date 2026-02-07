@@ -6,6 +6,24 @@
 
 Automated Jenkins CI/CD pipeline for building, versioning, and releasing the Machine Maintenance Android app. The pipeline runs in a containerized Flutter environment using Docker and handles complete release workflow including version management, building, tagging, and GitHub releases.
 
+### Pipeline Philosophy
+
+**Quality assurance before release**: This pipeline is designed for releasing verified code, not for testing it. All code quality checks (testing, analysis, linting) should be performed locally before triggering a release build.
+
+**Pipeline responsibilities**:
+- ✅ Version management (increment and tag)
+- ✅ Building release artifacts (APK and AAB)
+- ✅ Publishing to GitHub and Play Store
+- ✅ Artifact archiving
+
+**Developer responsibilities**:
+- ✅ Run `flutter test` locally
+- ✅ Run `flutter analyze` locally
+- ✅ Fix all issues before triggering release
+- ✅ Verify app functionality on test devices
+
+This separation keeps the release pipeline fast and focused on deployment, while ensuring quality through local development practices.
+
 ## Pipeline Architecture
 
 ### Infrastructure
@@ -52,6 +70,81 @@ Benefits:
 - `major` - Breaking changes (1.0.0 → 2.0.0)
 
 Build number is automatically incremented on every build.
+
+### RELEASE_NOTES
+**Type**: Text parameter
+**Optional**: Yes
+**Description**: Multiline text field for custom release notes
+
+**Usage**:
+- Included in GitHub release description
+- Used for Play Store "What's new" section
+- Supports markdown formatting for GitHub
+- Automatically formatted for both platforms
+
+**Example**:
+```
+## New Features
+- Added front/rear tire tracking
+- Improved notification system
+
+## Bug Fixes
+- Fixed notification timing issues
+```
+
+### PUBLISH_TO_PLAY_STORE
+**Type**: Boolean parameter
+**Default**: `false` (unchecked)
+**Description**: Enable/disable Google Play Store publishing
+
+**Behavior**:
+- When **enabled** (checked):
+  - Builds Android App Bundle (AAB)
+  - Publishes to Play Store (track determined by PLAY_STORE_TRACK parameter)
+  - Requires Play Store credentials configured
+  - Archives both APK and AAB
+- When **disabled** (unchecked):
+  - Only builds APK
+  - Only creates GitHub release
+  - No Play Store interaction
+
+**Safety**: Default is unchecked to prevent accidental publishing during testing.
+
+### PLAY_STORE_TRACK
+**Type**: Choice parameter
+**Default**: `production`
+**Choices**: production, internal, beta, alpha
+**Description**: Select which Play Store track to publish to
+
+**Track Options**:
+
+1. **production** (Default)
+   - Public release available to all users
+   - Requires Google's review process (1-7 days)
+   - Best for: Stable releases ready for general availability
+   - Automated publishing (no manual promotion needed)
+
+2. **internal**
+   - Internal testing with up to 100 testers
+   - No review required, available immediately
+   - Best for: Quick testing before public release
+   - Requires manual promotion to production
+
+3. **beta**
+   - Open or closed beta testing
+   - Larger testing audience
+   - Best for: Public beta programs
+   - Requires manual promotion to production
+
+4. **alpha**
+   - Smaller alpha testing group
+   - Best for: Early access testing
+   - Requires manual promotion to production
+
+**When to use each**:
+- Use **production** for normal releases (fully automated)
+- Use **internal** for testing before making public
+- Use **beta/alpha** for staged rollouts with specific tester groups
 
 ## Pipeline Stages
 
@@ -106,24 +199,11 @@ stage('Get Dependencies')
 ```
 - Runs `flutter pub get`
 - Downloads all package dependencies
+- Required before building
 
-### 5. Analyze Code
-```groovy
-stage('Analyze Code')
-```
-- Runs `flutter analyze`
-- Static code analysis
-- Checks for issues and violations
+**Note**: Code analysis and testing are done locally before release. The release pipeline focuses on building and deploying verified code.
 
-### 6. Run Tests
-```groovy
-stage('Run Tests')
-```
-- Runs `flutter test`
-- Continues even if tests fail (non-blocking)
-- Useful for projects without tests yet
-
-### 7. Build Release APK
+### 5. Build Release APK
 ```groovy
 stage('Build Release APK')
 ```
@@ -132,7 +212,28 @@ stage('Build Release APK')
 - Renames APK with version: `machine-maintenance-1.1.0-2.apk`
 - APK location: `build/app/outputs/flutter-apk/`
 
-### 8. Commit Version Changes
+### 6. Build App Bundle (AAB)
+```groovy
+stage('Build App Bundle (AAB)') {
+    when {
+        expression { params.PUBLISH_TO_PLAY_STORE == true }
+    }
+}
+```
+**Conditional**: Only runs if `PUBLISH_TO_PLAY_STORE` is enabled
+
+**Process**:
+- Runs `flutter build appbundle --release`
+- Generates Android App Bundle for Play Store
+- Renames AAB with version: `machine-maintenance-1.1.0-2.aab`
+- AAB location: `build/app/outputs/bundle/release/`
+
+**Why AAB?**:
+- Required format for Play Store publishing
+- Allows Google to generate optimized APKs per device
+- Smaller download sizes for end users
+
+### 7. Commit Version Changes
 ```groovy
 stage('Commit Version Changes')
 ```
@@ -141,14 +242,14 @@ stage('Commit Version Changes')
   - `lib/utils/constants.dart`
 - Commit message: `chore: bump version to X.Y.Z+N`
 
-### 9. Create Git Tag
+### 8. Create Git Tag
 ```groovy
 stage('Create Git Tag')
 ```
 - Creates annotated git tag: `vX.Y.Z`
 - Tag message: `Release X.Y.Z`
 
-### 10. Push to GitHub
+### 9. Push to GitHub
 ```groovy
 stage('Push to GitHub')
 ```
@@ -157,7 +258,7 @@ stage('Push to GitHub')
 - Uses GitHub token (Secret text credential)
 - Format: `https://${GITHUB_TOKEN}@github.com/repo.git`
 
-### 11. Create GitHub Release
+### 10. Create GitHub Release
 ```groovy
 stage('Create GitHub Release')
 ```
@@ -165,6 +266,7 @@ stage('Create GitHub Release')
 1. Creates GitHub release via REST API
 2. Sets release name: `Release X.Y.Z`
 3. Generates release notes with:
+   - Custom release notes (if provided)
    - Version number
    - Build number
    - Release type
@@ -172,13 +274,54 @@ stage('Create GitHub Release')
 4. Uploads APK as release asset
 5. Publishes release (not draft)
 
+**Release notes formatting**:
+- Supports markdown for GitHub
+- Includes user-provided `RELEASE_NOTES` parameter
+- Falls back to auto-generated notes if not provided
+
 **Release URL**: `https://github.com/{GITHUB_REPO}/releases/tag/{VERSION_TAG}`
+
+### 11. Publish to Play Store
+```groovy
+stage('Publish to Play Store') {
+    when {
+        expression { params.PUBLISH_TO_PLAY_STORE == true }
+    }
+}
+```
+**Conditional**: Only runs if `PUBLISH_TO_PLAY_STORE` is enabled
+
+**Process**:
+1. Creates release notes directory: `android/app/src/main/play/release-notes/en-US/`
+2. Writes release notes to `default.txt` file
+   - Uses `RELEASE_NOTES` parameter
+   - Falls back to auto-generated notes
+3. Sets `PLAY_STORE_TRACK` environment variable from parameter
+4. Runs Gradle task: `./gradlew publishBundle`
+5. Uploads AAB to selected Play Store track
+
+**Requirements**:
+- Play Store service account JSON configured in Jenkins
+- Credential ID: `play-store-service-account`
+- First release must be uploaded manually via Play Console
+
+**Track**: Dynamic (selected via `PLAY_STORE_TRACK` parameter)
+- production: Automated public release (with Google review)
+- internal: Internal testing (no review, manual promotion)
+- beta/alpha: Staged rollouts (manual promotion)
+
+**Gradle Configuration**:
+- Uses Gradle Play Publisher plugin (v3.10.1)
+- Credentials from environment: `PLAY_STORE_CONFIG_JSON`
+- Track from environment: `PLAY_STORE_TRACK`
+- Release status: COMPLETED (immediately available to track audience)
 
 ### 12. Archive Artifacts
 ```groovy
 stage('Archive Artifacts')
 ```
 - Archives APK in Jenkins
+- Archives AAB (if Play Store publishing was enabled)
 - Available for download from Jenkins UI
 - Fingerprinting enabled for tracking
 
