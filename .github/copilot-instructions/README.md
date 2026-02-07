@@ -7,7 +7,7 @@ This folder contains structured documentation for GitHub Copilot to understand t
 ## Structure
 
 ### Setup & Configuration
-- **project-setup.md** - Initial project setup instructions and documentation approach
+- **documentation-structure.md** - How copilot-instructions are organized and maintained
 - **android-requirements.md** - Android app requirements and constraints
 - **technical-architecture.md** - Technical stack and architecture decisions
 - **flutter-setup.md** - Flutter project initialization and build configuration
@@ -22,6 +22,12 @@ This folder contains structured documentation for GitHub Copilot to understand t
 - **progress.md** - Current development status and roadmap
 - **notifications.md** - Notification system architecture and implementation
 - **database-backup.md** - Database export/import functionality
+- **maintenance-history.md** - Maintenance tracking and history features
+- **version-management.md** - App versioning strategy and automation
+
+### CI/CD & Release
+- **ci-cd-pipeline.md** - Jenkins CI/CD pipeline architecture and stages
+- **play-store-publishing.md** - Play Store publishing integration and security
 
 ## Purpose
 

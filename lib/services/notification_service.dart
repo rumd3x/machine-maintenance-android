@@ -224,7 +224,7 @@ class NotificationService {
       final status = entry.value;
 
       // Find the corresponding interval
-      final interval = intervals.firstWhere(
+      var interval = intervals.firstWhere(
         (i) => i.maintenanceType == maintenanceType,
         orElse: () => MaintenanceInterval(
           machineId: machine.id!,

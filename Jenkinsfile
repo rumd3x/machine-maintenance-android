@@ -34,6 +34,8 @@ pipeline {
         GITHUB_REPO = 'rumd3x/machine-maintenance-android'  // Update with your GitHub repo
         APP_NAME = 'machine-maintenance'
         PLAY_STORE_CREDENTIALS_ID = 'play-store-service-account'  // Jenkins credential ID for Play Store JSON key
+        ANDROID_KEYSTORE_ID = 'android-upload-keystore'  // Jenkins credential ID for keystore file
+        ANDROID_KEYSTORE_PASSWORD_ID = 'android-keystore-password'  // Jenkins credential ID for keystore password
     }
     
     stages {
@@ -47,6 +49,34 @@ pipeline {
                     git config user.name "Jenkins CI"
                     git config user.email "jenkins@ci.local"
                 '''
+            }
+        }
+        
+        stage('Setup Android Signing') {
+            steps {
+                script {
+                    echo 'Setting up Android signing configuration...'
+                    
+                    withCredentials([
+                        file(credentialsId: env.ANDROID_KEYSTORE_ID, variable: 'KEYSTORE_FILE'),
+                        string(credentialsId: env.ANDROID_KEYSTORE_PASSWORD_ID, variable: 'KEYSTORE_PASSWORD')
+                    ]) {
+                        // Copy keystore to expected location
+                        sh 'cp $KEYSTORE_FILE android/upload-keystore.jks'
+                        
+                        // Create key.properties file
+                        sh """
+                            cat > android/key.properties << EOF
+storePassword=${KEYSTORE_PASSWORD}
+keyPassword=${KEYSTORE_PASSWORD}
+keyAlias=upload
+storeFile=\${PWD}/android/upload-keystore.jks
+EOF
+                        """
+                        
+                        echo 'Android signing configured successfully'
+                    }
+                }
             }
         }
         

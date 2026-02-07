@@ -330,7 +330,7 @@ GestureDetector(
 - Publishes GitHub release with APK attachment
 - Optionally publishes to Play Store internal testing track
 
-**Pipeline stages**: Checkout → Calculate Version → Update Version → Dependencies → Build APK → Build AAB (optional) → Commit → Tag → Push → GitHub Release → Play Store Publish (optional) → Archive
+**Pipeline stages**: Checkout → Setup Android Signing → Calculate Version → Update Version → Dependencies → Build APK → Build AAB (optional) → Commit → Tag → Push → GitHub Release → Play Store Publish (optional) → Archive
 
 **Pipeline parameters**:
 - `RELEASE_TYPE`: Version increment type (patch/minor/major)
@@ -496,11 +496,16 @@ Added three new maintenance types:
    - Default: production (automated public releases)
 
 **New Pipeline Stages**:
-1. **Build App Bundle (AAB)**: Conditional stage that builds Android App Bundle for Play Store
-2. **Publish to Play Store**: Automated upload to Google Play internal testing track
+1. **Setup Android Signing**: Injects keystore credentials from Jenkins before building
+2. **Build App Bundle (AAB)**: Conditional stage that builds Android App Bundle for Play Store
+3. **Publish to Play Store**: Automated upload to Google Play with track selection
 
 **Files Modified**:
 - `android/app/build.gradle.kts`:
+  - **CRITICAL UPDATE**: Added signing configuration that reads from `key.properties`
+  - Loads keystore properties: keyAlias, keyPassword, storeFile, storePassword
+  - Creates release signing config with these properties
+  - Falls back to debug signing if `key.properties` doesn't exist (local dev)
   - Added Gradle Play Publisher plugin (v3.10.1)
   - Configured Play Store credentials via environment variable
   - Dynamic track selection via `PLAY_STORE_TRACK` environment variable
@@ -510,7 +515,11 @@ Added three new maintenance types:
   - Added `RELEASE_NOTES` text parameter
   - Added `PUBLISH_TO_PLAY_STORE` boolean parameter
   - Added `PLAY_STORE_TRACK` choice parameter (production/internal/beta/alpha)
-  - Updated `PLAY_STORE_CREDENTIALS_ID` environment variable
+  - **NEW**: Added `ANDROID_KEYSTORE_ID` and `ANDROID_KEYSTORE_PASSWORD_ID` environment variables
+  - **NEW**: Added "Setup Android Signing" stage that:
+    * Copies keystore from Jenkins credentials to workspace
+    * Dynamically creates `key.properties` file with credentials
+    * Uses credential IDs: `android-upload-keystore` and `android-keystore-password`
   - Updated GitHub release body to include release notes
   - Added "Build App Bundle (AAB)" conditional stage
   - Added "Publish to Play Store" conditional stage with release notes generation
@@ -518,36 +527,43 @@ Added three new maintenance types:
   - Updated success message to show Play Store publish status and track
   - Updated Archive stage to include AAB artifacts
 
+- `android/.gitignore`:
+  - Already protects `**/*.jks` (covers temporary keystores Jenkins creates)
+  - Already has key.properties, *service-account*.json patterns
+
 **Documentation Added**:
 - Created comprehensive [play-store-publishing.md](copilot-instructions/play-store-publishing.md) guide:
   - **Public Repository Security** section with clear DO/DON'T guidelines
   - Secure workflow diagram showing secret flow
-  - Google Play Console account setup
-  - App signing configuration (Google Play App Signing vs manual)
-  - Upload keystore creation with secure storage practices
-  - Service account setup for API access
-  - Jenkins credentials configuration (secrets never in repo)
-  - Pipeline usage instructions
-  - Release tracks and progression strategy
-  - Comprehensive security audit checklist
-  - Troubleshooting common issues
-  - Security best practices for public repos
-  - First-time publishing checklist
+  - Google Play App Signing explanation (two-key system)
+  - Build configuration patterns (signing and publishing)
+  - Jenkins pipeline integration patterns
+  - Pipeline parameters and release tracks
+  - Service account setup requirements
+  - Common error patterns and solutions
+  - Security best practices for AI assistance
+  - Technical dependencies and references
 
 **Security Model**:
 - All secrets stored in Jenkins credentials (never committed)
 - `.gitignore` protects keystores, key.properties, service account JSON
-- Build configuration safe to commit (reads from environment variables)
+- Build configuration safe to commit (reads from environment variables OR files)
 - Local development uses gitignored `key.properties` pointing to secure keystore location
-- CI/CD injects secrets at build time via environment variables
+- CI/CD injects secrets dynamically:
+  * Copies keystore from Jenkins Secret File credential
+  * Creates `key.properties` dynamically with Secret Text credential
+  * Both are cleaned up after build (workspace cleanup)
+- Credential IDs hardcoded in Jenkinsfile for consistency
 
 **Key Features**:
+- **Automatic signing** in Jenkins without storing secrets in repo
 - Release notes appear in both GitHub and Play Store
 - Direct publishing to any Play Store track (production/internal/beta/alpha)
 - Production releases automated (no manual promotion needed)
 - AAB artifacts archived alongside APK
 - Conditional execution - no performance impact when disabled
 - Comprehensive error handling and validation
+- Local development still works with manual `key.properties` setup
 
 **Usage Pattern**:
 ```

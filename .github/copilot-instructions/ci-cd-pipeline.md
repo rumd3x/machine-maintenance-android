@@ -156,7 +156,35 @@ stage('Checkout')
 - Configures git user for commits
 - Sets up workspace
 
-### 2. Calculate New Version
+### 2. Setup Android Signing
+```groovy
+stage('Setup Android Signing')
+```
+**Purpose**: Injects Android keystore credentials from Jenkins into the workspace
+
+**Process**:
+1. Loads keystore file from Jenkins credential: `android-upload-keystore`
+2. Loads keystore password from Jenkins credential: `android-keystore-password`
+3. Copies keystore to `android/upload-keystore.jks`
+4. Creates `android/key.properties` dynamically with:
+   - storePassword
+   - keyPassword
+   - keyAlias (always `upload`)
+   - storeFile (absolute path to keystore)
+
+**Security**:
+- Credentials never committed to repository
+- Keystore and properties file created temporarily in workspace
+- Automatically cleaned up after build (workspace cleanup)
+- `.gitignore` protects files from accidental commit
+
+**Required Jenkins Credentials**:
+- `android-upload-keystore` (Secret file) - The JKS keystore file
+- `android-keystore-password` (Secret text) - Password for keystore and key
+
+This stage ensures release builds are properly signed without storing sensitive data in the repository.
+
+### 3. Calculate New Version
 ```groovy
 stage('Calculate New Version')
 ```
@@ -184,7 +212,7 @@ Minor:   1.3.0+6
 Major:   2.0.0+6
 ```
 
-### 3. Update Version
+### 4. Update Version
 ```groovy
 stage('Update Version')
 ```
@@ -193,7 +221,7 @@ stage('Update Version')
 - Updates both `pubspec.yaml` and `lib/utils/constants.dart`
 - Verifies changes
 
-### 4. Get Dependencies
+### 5. Get Dependencies
 ```groovy
 stage('Get Dependencies')
 ```
@@ -203,7 +231,7 @@ stage('Get Dependencies')
 
 **Note**: Code analysis and testing are done locally before release. The release pipeline focuses on building and deploying verified code.
 
-### 5. Build Release APK
+### 6. Build Release APK
 ```groovy
 stage('Build Release APK')
 ```
@@ -211,8 +239,9 @@ stage('Build Release APK')
 - Generates optimized production APK
 - Renames APK with version: `machine-maintenance-1.1.0-2.apk`
 - APK location: `build/app/outputs/flutter-apk/`
+- Uses release signing config from `android/key.properties`
 
-### 6. Build App Bundle (AAB)
+### 7. Build App Bundle (AAB)
 ```groovy
 stage('Build App Bundle (AAB)') {
     when {
@@ -227,13 +256,14 @@ stage('Build App Bundle (AAB)') {
 - Generates Android App Bundle for Play Store
 - Renames AAB with version: `machine-maintenance-1.1.0-2.aab`
 - AAB location: `build/app/outputs/bundle/release/`
+- Uses release signing config from `android/key.properties`
 
 **Why AAB?**:
 - Required format for Play Store publishing
 - Allows Google to generate optimized APKs per device
 - Smaller download sizes for end users
 
-### 7. Commit Version Changes
+### 8. Commit Version Changes
 ```groovy
 stage('Commit Version Changes')
 ```
@@ -242,14 +272,14 @@ stage('Commit Version Changes')
   - `lib/utils/constants.dart`
 - Commit message: `chore: bump version to X.Y.Z+N`
 
-### 8. Create Git Tag
+### 9. Create Git Tag
 ```groovy
 stage('Create Git Tag')
 ```
 - Creates annotated git tag: `vX.Y.Z`
 - Tag message: `Release X.Y.Z`
 
-### 9. Push to GitHub
+### 10. Push to GitHub
 ```groovy
 stage('Push to GitHub')
 ```
@@ -258,7 +288,7 @@ stage('Push to GitHub')
 - Uses GitHub token (Secret text credential)
 - Format: `https://${GITHUB_TOKEN}@github.com/repo.git`
 
-### 10. Create GitHub Release
+### 11. Create GitHub Release
 ```groovy
 stage('Create GitHub Release')
 ```
@@ -281,7 +311,7 @@ stage('Create GitHub Release')
 
 **Release URL**: `https://github.com/{GITHUB_REPO}/releases/tag/{VERSION_TAG}`
 
-### 11. Publish to Play Store
+### 12. Publish to Play Store
 ```groovy
 stage('Publish to Play Store') {
     when {
@@ -316,7 +346,7 @@ stage('Publish to Play Store') {
 - Track from environment: `PLAY_STORE_TRACK`
 - Release status: COMPLETED (immediately available to track audience)
 
-### 12. Archive Artifacts
+### 13. Archive Artifacts
 ```groovy
 stage('Archive Artifacts')
 ```
