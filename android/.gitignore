@@ -12,3 +12,7 @@ GeneratedPluginRegistrant.java
 key.properties
 **/*.keystore
 **/*.jks
+
+# Play Store service account credentials (NEVER commit!)
+**/play-store-service-account.json
+**/*service-account*.json

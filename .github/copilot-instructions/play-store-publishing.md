@@ -6,6 +6,74 @@
 
 Automated Google Play Store publishing is integrated into the Jenkins CI/CD pipeline. The pipeline can build and publish App Bundles (AAB) to the Play Store with custom release notes.
 
+## 🔒 Public Repository Security
+
+**CRITICAL**: This repository is public. All sensitive credentials must be kept outside the repository and managed securely.
+
+### ❌ NEVER Commit to Repository:
+- ❌ Keystores (`.jks`, `.keystore` files)
+- ❌ `android/key.properties` file
+- ❌ Service account JSON files
+- ❌ Passwords or API keys
+- ❌ `local.properties` with sensitive paths
+
+### ✅ What's Safe in Public Repo:
+- ✅ Build configuration files (`build.gradle.kts`)
+- ✅ Jenkinsfile (uses credential IDs, not actual secrets)
+- ✅ Documentation
+- ✅ Source code (without hardcoded secrets)
+
+### 🛡️ Security Model:
+- **Jenkins**: Stores all secrets as credentials (never in repo)
+- **Local Development**: Secrets in `key.properties` (gitignored)
+- **CI/CD**: Injects secrets via environment variables
+- **.gitignore**: Blocks all sensitive files from being committed
+
+## How It Works (Secure Workflow)
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│  PUBLIC REPOSITORY (GitHub)                                 │
+├─────────────────────────────────────────────────────────────┤
+│  ✅ Source code                                              │
+│  ✅ build.gradle.kts (reads from env vars)                  │
+│  ✅ Jenkinsfile (references credential IDs)                 │
+│  ✅ .gitignore (blocks sensitive files)                     │
+│  ❌ NO keystores                                            │
+│  ❌ NO passwords                                            │
+│  ❌ NO service account JSON                                 │
+└─────────────────────────────────────────────────────────────┘
+                          ↓
+┌─────────────────────────────────────────────────────────────┐
+│  LOCAL DEVELOPMENT                                          │
+├─────────────────────────────────────────────────────────────┤
+│  📁 ~/secure-keys/machine-maintenance-upload.jks            │
+│  📄 android/key.properties (gitignored)                     │
+│     ↳ Points to keystore in secure location                │
+└─────────────────────────────────────────────────────────────┘
+                          ↓
+┌─────────────────────────────────────────────────────────────┐
+│  JENKINS CI/CD                                              │
+├─────────────────────────────────────────────────────────────┤
+│  🔐 Secret File: android-upload-keystore                    │
+│  🔐 Secret File: play-store-service-account                 │
+│  🔐 Secret Text: keystore passwords                         │
+│     ↳ Injected as environment variables at build time      │
+└─────────────────────────────────────────────────────────────┘
+                          ↓
+┌─────────────────────────────────────────────────────────────┐
+│  BUILD PROCESS                                              │
+├─────────────────────────────────────────────────────────────┤
+│  1. Checkout public repo (no secrets)                       │
+│  2. Jenkins injects credentials via env vars                │
+│  3. Gradle reads env vars (never from repo)                 │
+│  4. Signs AAB with injected keystore                        │
+│  5. Publishes with injected service account                 │
+└─────────────────────────────────────────────────────────────┘
+```
+
+**Key Principle**: Secrets flow INTO the build from secure external sources, never FROM the repository.
+
 ## Features
 
 - **Automated AAB building** - Android App Bundle for Play Store
@@ -46,11 +114,19 @@ Manage your own signing keys (not recommended for production).
 
 ### 3. Create Upload Keystore
 
+**🔒 SECURITY NOTE**: This step creates sensitive files that must NEVER be committed to the public repository.
+
 Even with Google Play App Signing, you need an upload keystore to sign your AAB before uploading.
 
 #### Generate Upload Keystore
 
+**Run this command locally** (not in the repo):
+
 ```bash
+# Create keystore in a secure location OUTSIDE the repository
+mkdir -p ~/secure-keys
+cd ~/secure-keys
+
 keytool -genkey -v -keystore machine-maintenance-upload.jks \
   -keyalg RSA -keysize 2048 -validity 10000 \
   -alias upload \
@@ -59,33 +135,50 @@ keytool -genkey -v -keystore machine-maintenance-upload.jks \
   -dname "CN=Your Name, OU=Your Organization, O=Company, L=City, ST=State, C=US"
 ```
 
-**Important**: 
-- Store passwords securely (use a password manager)
-- Backup the keystore file safely
-- Never commit the keystore to git
+**Important Security Practices**: 
+- ✅ Store keystore in a secure location (e.g., `~/secure-keys/`, encrypted drive, password manager)
+- ✅ Use strong, unique passwords (20+ characters)
+- ✅ Backup keystore to multiple secure locations (encrypted cloud, USB drive)
+- ✅ Never share keystore via email, chat, or public channels
+- ❌ NEVER commit the keystore to git (checked by `.gitignore`)
+- ❌ NEVER store keystore in the project directory
 
-#### Configure Flutter Signing
+#### Configure Flutter Signing (Local Development Only)
 
-Create `android/key.properties`:
+Create `android/key.properties` **in your local environment**:
 
 ```properties
 storePassword=YOUR_STORE_PASSWORD
 keyPassword=YOUR_KEY_PASSWORD
 keyAlias=upload
-storeFile=/path/to/machine-maintenance-upload.jks
+storeFile=/home/youruser/secure-keys/machine-maintenance-upload.jks
 ```
 
-Add to `.gitignore`:
-```
-android/key.properties
-*.jks
-*.keystore
+**CRITICAL**: 
+- This file is automatically ignored by `.gitignore`
+- Use absolute path pointing to secure location
+- Each developer needs their own `key.properties` locally
+- Never commit this file to git
+
+#### Verify .gitignore Protection
+
+Ensure `android/.gitignore` contains (already configured in this repo):
+
+```gitignore
+# Remember to never publicly share your keystore.
+key.properties
+**/*.keystore
+**/*.jks
+**/play-store-service-account.json
+**/*service-account*.json
 ```
 
-Update `android/app/build.gradle.kts`:
+#### Update Build Configuration (Safe for Public Repo)
+
+Update `android/app/build.gradle.kts` with this code (safe to commit):
 
 ```kotlin
-// Load keystore properties
+// Load keystore properties from gitignored file
 val keystorePropertiesFile = rootProject.file("../key.properties")
 val keystoreProperties = Properties()
 if (keystorePropertiesFile.exists()) {
@@ -112,7 +205,15 @@ android {
 }
 ```
 
+**Why this is safe for public repos**:
+- ✅ Code only reads from `key.properties` (which is gitignored)
+- ✅ No hardcoded secrets
+- ✅ Gracefully handles missing file (won't break debug builds)
+- ✅ Each developer/CI system has their own `key.properties`
+
 ### 4. Create Service Account for API Access
+
+**🔒 SECURITY NOTE**: The service account JSON file contains sensitive credentials and must NEVER be committed to the repository.
 
 The Jenkins pipeline uses the Google Play Developer API to publish releases.
 
@@ -135,7 +236,9 @@ The Jenkins pipeline uses the Google Play Developer API to publish releases.
    - Go to "Keys" tab
    - Add Key → Create new key → JSON
    - Download the JSON file (e.g., `play-store-service-account.json`)
-   - **Keep this file secure!**
+   - **🔒 CRITICAL**: Store this file securely (password manager, encrypted storage)
+   - **❌ NEVER commit this file to git** (protected by `.gitignore`)
+   - **❌ NEVER share via email, chat, or public channels**
 
 4. **Link Service Account to Play Console**:
    - Go to Play Console → Setup → API access
@@ -147,7 +250,9 @@ The Jenkins pipeline uses the Google Play Developer API to publish releases.
      - ✅ Manage testing track releases
      - ✅ Manage internal app sharing releases
 
-### 5. Configure Jenkins Credentials
+### 5. Configure Jenkins Credentials (CI/CD Only)
+
+**🔒 SECURITY MODEL**: All secrets are stored in Jenkins credentials, never in the repository.
 
 #### Add Play Store Service Account JSON
 
@@ -158,6 +263,8 @@ The Jenkins pipeline uses the Google Play Developer API to publish releases.
    - **File**: Upload `play-store-service-account.json`
    - **ID**: `play-store-service-account`
    - **Description**: Play Store API Service Account
+
+**Note**: This credential ID is referenced in Jenkinsfile but the actual file never touches the repository.
 
 #### Add Keystore to Jenkins
 
@@ -340,12 +447,108 @@ The pipeline supports all Play Store release tracks via the **PLAY_STORE_TRACK**
 
 **Solution**: Keep release notes concise, detailed changelog can be in GitHub
 
-## Security Best Practices
+## Security Best Practices for Public Repositories
 
-- ✅ **Never** commit keystores or passwords to git
-- ✅ Use `.gitignore` for sensitive files
-- ✅ Store service account JSON securely
-- ✅ Use environment variables for secrets in CI
+### ✅ DO:
+
+**File Protection**:
+- ✅ Keep `.gitignore` updated with all sensitive file patterns
+- ✅ Store keystores outside the repository directory
+- ✅ Use absolute paths in `key.properties` pointing to secure locations
+- ✅ Regularly audit git history for accidentally committed secrets
+
+**Credential Management**:
+- ✅ Store all secrets in Jenkins credentials (Secret file/Secret text)
+- ✅ Use environment variables in CI/CD pipelines
+- ✅ Rotate service account keys every 90 days
+- ✅ Use different keystores for development vs production (if needed)
+
+**Access Control**:
+- ✅ Limit Jenkins access to authorized personnel only
+- ✅ Enable 2FA on Google Play Console account
+- ✅ Limit service account permissions to minimum required
+- ✅ Review Play Console API access regularly
+
+**Backup & Recovery**:
+- ✅ Backup keystores to encrypted cloud storage (e.g., encrypted drive, password manager)
+- ✅ Store keystore passwords separately from keystore files
+- ✅ Document recovery procedures for lost credentials
+- ✅ Test backup restoration process
+
+### ❌ DON'T:
+
+**Never Commit**:
+- ❌ Keystores (`.jks`, `.keystore`) to git
+- ❌ `android/key.properties` file
+- ❌ Service account JSON files
+- ❌ Passwords or API keys in code or configs
+- ❌ `local.properties` with sensitive paths
+
+**Never Share**:
+- ❌ Keystores via email, chat, or file sharing
+- ❌ Service account JSON via insecure channels
+- ❌ Screenshots showing credentials
+- ❌ Debug logs containing sensitive data
+
+**Never Hardcode**:
+- ❌ Passwords in source code
+- ❌ API keys in configuration files
+- ❌ Keystore paths in committed files (use variables)
+
+### 🔍 Security Audit Checklist
+
+Before making repository public or after major changes:
+
+```bash
+# 1. Check for accidentally committed secrets
+git log --all --full-history --source --find-renames --diff-filter=D -- "*.jks" "*.keystore" "key.properties" "*service-account*.json"
+
+# 2. Verify gitignore is working
+git status --ignored
+
+# 3. Check for hardcoded credentials in code
+grep -r "password\|secret\|key" --include="*.dart" --include="*.kt" --include="*.gradle*"
+
+# 4. Verify no sensitive files are tracked
+git ls-files | grep -E "\.jks$|\.keystore$|key\.properties|service-account.*\.json"
+```
+
+### 🚨 If Secrets Are Accidentally Committed
+
+**DO NOT** just delete the file and commit - it remains in git history!
+
+**Immediate actions**:
+1. **Rotate all compromised credentials immediately**:
+   - Generate new keystore (if committed)
+   - Create new service account (if JSON committed)
+   - Update Jenkins credentials
+
+2. **Remove from git history**:
+   ```bash
+   # Use git-filter-repo (recommended) or BFG Repo-Cleaner
+   git filter-repo --path key.properties --invert-paths
+   git filter-repo --path "*.jks" --invert-paths
+   
+   # Force push to remote
+   git push origin --force --all
+   ```
+
+3. **Revoke old credentials**:
+   - Delete old service account in Google Cloud Console
+   - Never reuse the old keystore (even after removal from repo)
+
+### 📋 Public Repository Security Checklist
+
+Before publishing:
+- [ ] Reviewed all `.gitignore` entries
+- [ ] Verified no secrets in git history
+- [ ] All sensitive configs use environment variables
+- [ ] Jenkins credentials properly configured
+- [ ] README doesn't contain sensitive information
+- [ ] Documentation explains security model
+- [ ] Test builds work without local secrets (should gracefully fail)
+
+
 - ✅ Rotate service account keys periodically
 - ✅ Limit service account permissions to minimum required
 - ✅ Enable 2FA on Google Play Console account

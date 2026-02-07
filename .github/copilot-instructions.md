@@ -520,16 +520,26 @@ Added three new maintenance types:
 
 **Documentation Added**:
 - Created comprehensive [play-store-publishing.md](copilot-instructions/play-store-publishing.md) guide:
+  - **Public Repository Security** section with clear DO/DON'T guidelines
+  - Secure workflow diagram showing secret flow
   - Google Play Console account setup
   - App signing configuration (Google Play App Signing vs manual)
-  - Upload keystore creation and configuration
+  - Upload keystore creation with secure storage practices
   - Service account setup for API access
-  - Jenkins credentials configuration
+  - Jenkins credentials configuration (secrets never in repo)
   - Pipeline usage instructions
   - Release tracks and progression strategy
+  - Comprehensive security audit checklist
   - Troubleshooting common issues
-  - Security best practices
+  - Security best practices for public repos
   - First-time publishing checklist
+
+**Security Model**:
+- All secrets stored in Jenkins credentials (never committed)
+- `.gitignore` protects keystores, key.properties, service account JSON
+- Build configuration safe to commit (reads from environment variables)
+- Local development uses gitignored `key.properties` pointing to secure keystore location
+- CI/CD injects secrets at build time via environment variables
 
 **Key Features**:
 - Release notes appear in both GitHub and Play Store
