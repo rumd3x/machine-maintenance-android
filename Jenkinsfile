@@ -193,6 +193,54 @@ EOF
             }
         }
         
+        stage('Publish to Play Store') {
+            when {
+                expression { params.PUBLISH_TO_PLAY_STORE == true }
+            }
+            steps {
+                script {
+                    // Use default track if parameter not set (when checkbox unchecked)
+                    def track = params.PLAY_STORE_TRACK ?: 'internal'
+                    def releaseStatus = params.PLAY_STORE_RELEASE_STATUS ?: 'draft'
+                    echo "Publishing to Google Play Store (${track} track, ${releaseStatus} status)..."
+                    
+                    withCredentials([file(
+                        credentialsId: env.PLAY_STORE_CREDENTIALS_ID,
+                        variable: 'PLAY_STORE_CONFIG_JSON'
+                    )]) {
+                        // Create release notes directory
+                        sh '''
+                            mkdir -p android/app/src/main/play/release-notes/en-US
+                        '''
+                        
+                        // Write release notes to file
+                        def releaseNotesContent = params.RELEASE_NOTES?.trim() ?: "Version ${env.NEW_VERSION}\n\nBuild: ${env.NEW_BUILD_NUMBER}"
+                        writeFile file: 'android/app/src/main/play/release-notes/en-US/default.txt', text: releaseNotesContent
+                        
+                        // Set environment variables for Gradle
+                        def gradleEnv = "PLAY_STORE_TRACK=${track} PLAY_STORE_RELEASE_STATUS=${releaseStatus}"
+                        
+                        // Publish to Play Store using Gradle task
+                        sh """
+                            cd android
+                            ${gradleEnv} ./gradlew publishBundle --no-daemon
+                        """
+                        
+                        if (releaseStatus == 'draft') {
+                            echo "✅ Uploaded to Play Store (${track} track, DRAFT status)"
+                            echo "Visit https://play.google.com/console to review and publish the release"
+                        } else if (track == 'production') {
+                            echo "✅ Published to Play Store (PRODUCTION - public release, COMPLETED status)"
+                            echo "Release will be available after Google's review (1-7 days)"
+                        } else {
+                            echo "✅ Published to Play Store (${track} track, COMPLETED status)"
+                            echo "Visit https://play.google.com/console to promote to production"
+                        }
+                    }
+                }
+            }
+        }
+        
         stage('Commit Version Changes') {
             steps {
                 script {
@@ -293,54 +341,6 @@ EOF
                         """
                         
                         echo "✅ GitHub release created: https://github.com/${env.GITHUB_REPO}/releases/tag/${env.VERSION_TAG}"
-                    }
-                }
-            }
-        }
-        
-        stage('Publish to Play Store') {
-            when {
-                expression { params.PUBLISH_TO_PLAY_STORE == true }
-            }
-            steps {
-                script {
-                    // Use default track if parameter not set (when checkbox unchecked)
-                    def track = params.PLAY_STORE_TRACK ?: 'internal'
-                    def releaseStatus = params.PLAY_STORE_RELEASE_STATUS ?: 'draft'
-                    echo "Publishing to Google Play Store (${track} track, ${releaseStatus} status)..."
-                    
-                    withCredentials([file(
-                        credentialsId: env.PLAY_STORE_CREDENTIALS_ID,
-                        variable: 'PLAY_STORE_CONFIG_JSON'
-                    )]) {
-                        // Create release notes directory
-                        sh '''
-                            mkdir -p android/app/src/main/play/release-notes/en-US
-                        '''
-                        
-                        // Write release notes to file
-                        def releaseNotesContent = params.RELEASE_NOTES?.trim() ?: "Version ${env.NEW_VERSION}\n\nBuild: ${env.NEW_BUILD_NUMBER}"
-                        writeFile file: 'android/app/src/main/play/release-notes/en-US/default.txt', text: releaseNotesContent
-                        
-                        // Set environment variables for Gradle
-                        def gradleEnv = "PLAY_STORE_TRACK=${track} PLAY_STORE_RELEASE_STATUS=${releaseStatus}"
-                        
-                        // Publish to Play Store using Gradle task
-                        sh """
-                            cd android
-                            ${gradleEnv} ./gradlew publishBundle --no-daemon
-                        """
-                        
-                        if (releaseStatus == 'draft') {
-                            echo "✅ Uploaded to Play Store (${track} track, DRAFT status)"
-                            echo "Visit https://play.google.com/console to review and publish the release"
-                        } else if (track == 'production') {
-                            echo "✅ Published to Play Store (PRODUCTION - public release, COMPLETED status)"
-                            echo "Release will be available after Google's review (1-7 days)"
-                        } else {
-                            echo "✅ Published to Play Store (${track} track, COMPLETED status)"
-                            echo "Visit https://play.google.com/console to promote to production"
-                        }
                     }
                 }
             }
