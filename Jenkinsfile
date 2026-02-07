@@ -27,6 +27,11 @@ pipeline {
             choices: ['internal', 'production', 'beta', 'alpha'],
             description: 'Play Store release track (only used when PUBLISH_TO_PLAY_STORE is enabled; internal = safe for testing, production = public release)'
         )
+        choice(
+            name: 'PLAY_STORE_RELEASE_STATUS',
+            choices: ['draft', 'completed'],
+            description: 'Release status (draft = requires manual review in Play Console, completed = goes live immediately on selected track). Use DRAFT for apps not yet published.'
+        )
     }
     
     environment {
@@ -301,7 +306,8 @@ EOF
                 script {
                     // Use default track if parameter not set (when checkbox unchecked)
                     def track = params.PLAY_STORE_TRACK ?: 'internal'
-                    echo "Publishing to Google Play Store (${track} track)..."
+                    def releaseStatus = params.PLAY_STORE_RELEASE_STATUS ?: 'draft'
+                    echo "Publishing to Google Play Store (${track} track, ${releaseStatus} status)..."
                     
                     withCredentials([file(
                         credentialsId: env.PLAY_STORE_CREDENTIALS_ID,
@@ -316,20 +322,23 @@ EOF
                         def releaseNotesContent = params.RELEASE_NOTES?.trim() ?: "Version ${env.NEW_VERSION}\n\nBuild: ${env.NEW_BUILD_NUMBER}"
                         writeFile file: 'android/app/src/main/play/release-notes/en-US/default.txt', text: releaseNotesContent
                         
-                        // Set track via environment variable
-                        def trackEnv = "PLAY_STORE_TRACK=${track}"
+                        // Set environment variables for Gradle
+                        def gradleEnv = "PLAY_STORE_TRACK=${track} PLAY_STORE_RELEASE_STATUS=${releaseStatus}"
                         
                         // Publish to Play Store using Gradle task
                         sh """
                             cd android
-                            ${trackEnv} ./gradlew publishBundle --no-daemon
+                            ${gradleEnv} ./gradlew publishBundle --no-daemon
                         """
                         
-                        if (track == 'production') {
-                            echo "✅ Published to Play Store (PRODUCTION - public release)"
+                        if (releaseStatus == 'draft') {
+                            echo "✅ Uploaded to Play Store (${track} track, DRAFT status)"
+                            echo "Visit https://play.google.com/console to review and publish the release"
+                        } else if (track == 'production') {
+                            echo "✅ Published to Play Store (PRODUCTION - public release, COMPLETED status)"
                             echo "Release will be available after Google's review (1-7 days)"
                         } else {
-                            echo "✅ Published to Play Store (${track} track)"
+                            echo "✅ Published to Play Store (${track} track, COMPLETED status)"
                             echo "Visit https://play.google.com/console to promote to production"
                         }
                     }
@@ -366,7 +375,8 @@ EOF
                 
                 if (params.PUBLISH_TO_PLAY_STORE == true) {
                     def track = params.PLAY_STORE_TRACK ?: 'internal'
-                    echo "✅ Published to Play Store (${track} track)"
+                    def releaseStatus = params.PLAY_STORE_RELEASE_STATUS ?: 'draft'
+                    echo "✅ Published to Play Store (${track} track, ${releaseStatus} status)"
                     echo "Play Console: https://play.google.com/console"
                 }
             }

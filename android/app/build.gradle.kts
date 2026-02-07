@@ -84,7 +84,17 @@ play {
     track.set(releaseTrack)
     
     // Release status (completed, draft, halted, inProgress)
-    releaseStatus.set(com.github.triplet.gradle.androidpublisher.ReleaseStatus.COMPLETED)
+    // Use DRAFT for apps that haven't been published yet, COMPLETED for published apps
+    // Set via PLAY_STORE_RELEASE_STATUS environment variable, defaults to "draft"
+    val releaseStatusValue = System.getenv("PLAY_STORE_RELEASE_STATUS") ?: "draft"
+    releaseStatus.set(
+        when (releaseStatusValue.lowercase()) {
+            "completed" -> com.github.triplet.gradle.androidpublisher.ReleaseStatus.COMPLETED
+            "halted" -> com.github.triplet.gradle.androidpublisher.ReleaseStatus.HALTED
+            "inprogress" -> com.github.triplet.gradle.androidpublisher.ReleaseStatus.IN_PROGRESS
+            else -> com.github.triplet.gradle.androidpublisher.ReleaseStatus.DRAFT
+        }
+    )
     
     // Default locale for release notes
     defaultToAppBundles.set(true)
