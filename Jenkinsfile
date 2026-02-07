@@ -22,23 +22,11 @@ pipeline {
             defaultValue: false,
             description: 'Publish to Google Play Store (requires Play Store credentials configured)'
         )
-        [$class: 'CascadeChoiceParameter',
-            choiceType: 'PT_SINGLE_SELECT',
+        choice(
             name: 'PLAY_STORE_TRACK',
-            description: 'Play Store release track (internal = safe for testing, production = public release)',
-            referencedParameters: 'PUBLISH_TO_PLAY_STORE',
-            script: [
-                $class: 'GroovyScript',
-                script: [
-                    script: '''
-                        if (PUBLISH_TO_PLAY_STORE == 'true') {
-                            return ['internal', 'production', 'beta', 'alpha']
-                        }
-                        return []
-                    '''
-                ]
-            ]
-        ]
+            choices: ['internal', 'production', 'beta', 'alpha'],
+            description: 'Play Store release track (only used when PUBLISH_TO_PLAY_STORE is enabled; internal = safe for testing, production = public release)'
+        )
     }
     
     environment {
