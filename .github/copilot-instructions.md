@@ -2,6 +2,31 @@
 
 **🚨 CRITICAL**: Before making ANY code changes, read [DOCUMENTATION-MANDATE.md](copilot-instructions/DOCUMENTATION-MANDATE.md). **All code changes MUST be documented immediately.**
 
+## 🔴 MANDATORY DOCUMENTATION RULE
+
+**ALWAYS** document every change made in this file (`copilot-instructions.md`):
+
+1. **During active work**: Document significant changes, patterns, and decisions as you make them
+2. **End of conversation**: Review ALL changes made and ensure they are documented in the appropriate section
+3. **New features**: Document the feature, its location, usage patterns, and any gotchas
+4. **Bug fixes**: Document what was broken, how it was fixed, and the correct pattern going forward
+5. **Architecture changes**: Document the new approach, why it was changed, and migration notes
+6. **UI/UX changes**: Document the pattern, component usage, and styling guidelines
+
+**Never leave a conversation without updating this documentation file.**
+
+### Documentation File Placement
+
+**NEVER create summary or documentation markdown files in the project root directory.**
+
+All documentation MUST be placed in `.github/copilot-instructions/` directory:
+- ✅ `.github/copilot-instructions/feature-name.md` - Feature documentation
+- ✅ `.github/copilot-instructions/progress.md` - Session summaries
+- ❌ `ROOT/SETUP_COMPLETE.md` - Never in root
+- ❌ `ROOT/FEATURE_IMPLEMENTATION.md` - Never in root
+
+**Exception**: `README.md` is the ONLY markdown file allowed in root.
+
 ## Project-Specific Guidelines
 
 ### Form Screen Consistency
@@ -28,9 +53,12 @@ When modifying either `add_machine_screen.dart` or `edit_machine_screen.dart`, *
    7. Serial Number (optional)
    8. Spark Plug Type (optional)
    9. Oil Type (optional)
-   10. Fuel Type (optional)
-   11. Current Odometer (required)
-   12. Tank Size (optional)
+   10. Oil Capacity (optional)
+   11. Fuel Type (optional)
+   12. Front Tires Size (optional)
+   13. Rear Tires Size (optional)
+   14. Current Odometer (required)
+   15. Tank Size (optional)
 
 3. **Field Properties** (must match exactly):
    - **Icons**: 
@@ -41,13 +69,22 @@ When modifying either `add_machine_screen.dart` or `edit_machine_screen.dart`, *
      - Serial Number: `Icons.numbers`
      - Spark Plug: `Icons.electrical_services`
      - Oil Type: `Icons.water_drop`
+     - Oil Capacity: `Icons.water_drop`
      - Fuel Type: `Icons.local_gas_station`
+     - Front Tires Size: `Icons.circle_outlined`
+     - Rear Tires Size: `Icons.circle_outlined`
      - Odometer: `Icons.speed`
      - Tank Size: `Icons.local_gas_station`
    
    - **Hints**:
      - Brand: `'e.g., Suzuki, Honda, Yamaha'`
      - Model: `'e.g., Intruder 125, CG 160'`
+     - Nickname: `'e.g., My Bike, Work Car'`
+     - Oil Type: `'e.g., 10W-40, 20W-50'`
+     - Oil Capacity: `'e.g., 1.2L, 4 Liters'`
+     - Fuel Type: `'e.g., Gasoline, Diesel, Ethanol'`
+     - Front Tires Size: `'e.g., 205/55 R16'`
+     - Rear Tires Size: `'e.g., 225/50 R17'`
      - Nickname: `'e.g., My Bike, Work Car'`
      - Year: `'e.g., 2008'`
      - Serial Number: `'VIN or chassis number'`
@@ -119,13 +156,14 @@ import '../utils/constants.dart';
 
 ### Database Structure
 
-**Current Version**: 4
+**Current Version**: 5
 
 #### Version History:
 - **v1**: Initial schema (machines, maintenance_records, maintenance_intervals)
 - **v2**: Added `fuelType` to machines, `fuelAmount` to maintenance_records
 - **v3**: Added `notifications` table
 - **v4**: Added `notificationSent` flag to maintenance_intervals
+- **v5**: Added `oilCapacity`, `frontTiresSize`, `rearTiresSize` to machines
 
 #### Notifications Table Schema:
 ```sql
@@ -202,8 +240,20 @@ Notifications are checked/scheduled at:
 3. **Notification sent flag**:
    - Check `notificationSent` flag before sending notifications (prevents duplicates)
    - Set flag to `true` after sending notification
-   - Reset flag to `false` when maintenance is logged and status returns to optimal
+   - **CRITICAL**: Reset flag when status is NOT overdue (optimal OR checkSoon)
+   - This allows yellow→red transitions to notify properly
+   - For new machines: Default intervals created with `notificationSent: true` to prevent immediate notifications
    - Methods: `resetNotificationSentFlag()`, `resetNotificationFlagsForOkIntervals()`
+   
+   **Notification Logic**:
+   - CheckSoon (yellow): Resets flag when encountered, schedules notification, sets flag
+   - Overdue (red): Always checks if should notify (ignores flag from checkSoon cycle)
+   - Uses notification history to prevent duplicate overdue notifications (24h window)
+   - New machines: No notifications until first status change (flag preset)
+   - Yellow→Yellow: No duplicate (flag already set)
+   - Yellow→Red: Notifies (flag reset during yellow phase)
+   - Red→Red: No duplicate (history check prevents)
+   - Service logged: Resets flag for non-overdue statuses
 
 4. **Reschedule after changes**:
    - Always call `_scheduleNotificationsForMachine()` after updating machine/maintenance data
@@ -239,6 +289,34 @@ Navigator.push(
 
 **NOT** with `machine` object (outdated pattern).
 
+### Machine Detail Screen UI Patterns
+
+**Action Buttons**: Use `OutlinedButton.icon` for section actions (not dim TextButton):
+```dart
+OutlinedButton.icon(
+  onPressed: () => {},
+  icon: const Icon(Icons.list, size: 16),
+  label: const Text('View All'),
+  style: OutlinedButton.styleFrom(
+    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+    minimumSize: Size.zero,
+    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+  ),
+)
+```
+
+**Interactive Status Indicators**: Wrap `StatusIndicator` in `GestureDetector` for tap actions:
+```dart
+GestureDetector(
+  onTap: () => _addMaintenance(preselectType: maintenanceType),
+  child: StatusIndicator(...),
+)
+```
+
+**Preselected Dialogs**: Support optional preselection in maintenance dialogs:
+- `_AddMaintenanceDialog` accepts `initialType` parameter
+- Allows clicking status circles to open dialog with that type preselected
+
 ### CI/CD Pipeline
 
 **Jenkins pipeline** automates releases with Docker:
@@ -270,3 +348,115 @@ Notifications require these permissions in `AndroidManifest.xml`:
 - `FOREGROUND_SERVICE_DATA_SYNC` - Background work
 - `WAKE_LOCK` - Wake device for notifications
 - `REQUEST_IGNORE_BATTERY_OPTIMIZATIONS` - Battery saver exemption
+
+## Machine Properties
+
+### Core Properties
+- `brand`, `model`: Required identification
+- `nickname`: Optional user-friendly name
+- `type`: Vehicle, Motorcycle, Generator, Machine
+- `year`, `serialNumber`: Optional metadata
+- `currentOdometer`, `odometerUnit`: Required tracking (km or hours)
+
+### Specifications
+- `sparkPlugType`: e.g., "NGK CR7HSA"
+- `oilType`: e.g., "10W-40", "20W-50"
+- `oilCapacity`: e.g., "1.2L", "4 Liters"
+- `fuelType`: e.g., "Gasoline", "Diesel", "Ethanol"
+- `tankSize`: Numeric value in liters
+- `frontTiresSize`: e.g., "205/55 R16"
+- `rearTiresSize`: e.g., "225/50 R17"
+- `imagePath`: Optional photo path
+
+## Maintenance Types
+
+### Available Maintenance Types
+
+Defined in `lib/utils/constants.dart`:
+
+1. **Oil Change** (`maintenanceTypeOilChange`) - Icon: `Icons.water_drop`
+2. **Filter Cleaning** (`maintenanceTypeFilterCleaning`) - Icon: `Icons.filter_alt`
+3. **Chain Oiling** (`maintenanceTypeChainOiling`) - Icon: `Icons.link`
+4. **Brake Fluid** (`maintenanceTypeBrakeFluid`) - Icon: `Icons.car_repair`
+5. **Coolant** (`maintenanceTypeCoolant`) - Icon: `Icons.ac_unit`
+6. **Spark Plug** (`maintenanceTypeSparkPlug`) - Icon: `Icons.electrical_services`
+7. **Brake Inspection** (`maintenanceTypeBrakeInspection`) - Icon: `Icons.car_repair`
+8. **General Service** (`maintenanceTypeGeneral`) - Icon: `Icons.build`
+9. **Fuel** (`maintenanceTypeFuel`) - Icon: `Icons.local_gas_station`
+10. **Front Tires** (`maintenanceTypeFrontTires`) - Icon: `Icons.trip_origin`
+11. **Rear Tires** (`maintenanceTypeRearTires`) - Icon: `Icons.trip_origin`
+12. **Belts/Chains** (`maintenanceTypeBeltsChains`) - Icon: `Icons.settings_input_component`
+
+### Adding New Maintenance Types
+
+1. Add constant to `lib/utils/constants.dart`
+2. Add display name to `maintenanceTypeNames` map
+3. Add icon case to `_getMaintenanceIcon()` in `machine_detail_screen.dart`
+4. No database migration needed (maintenanceType is TEXT field)
+
+## Recent Changes and Improvements
+
+### Session: February 2026 - Notification Fixes, UI Improvements, and New Features
+
+#### Notification System Fixes
+**Problem**: New machines triggered immediate notifications and yellow→red transitions didn't notify.
+
+**Solutions**:
+1. **Default intervals** now created with `notificationSent: true` (prevents immediate notifications)
+2. **Flag reset logic** updated to reset when status is NOT overdue (optimal OR checkSoon)
+3. **Duplicate prevention** added via 24-hour notification history check for overdue statuses
+
+**Files Modified**:
+- `lib/services/maintenance_calculator.dart` - Default intervals with flag preset
+- `lib/services/notification_service.dart` - Flag reset for checkSoon, history checks
+- `lib/services/machine_provider.dart` - Flag reset for non-overdue statuses after service logged
+
+#### UI Improvements - Machine Detail Screen
+**Changes**:
+1. **Action buttons** changed from dim `TextButton` to styled `OutlinedButton.icon`
+   - Added icons (Icons.settings for Configure, Icons.list for View All)
+   - Better padding and visual hierarchy
+2. **Status circles** made interactive with `GestureDetector`
+   - Tapping circle opens service dialog preselected to that type
+   - Better UX for quick maintenance logging
+
+**Files Modified**:
+- `lib/screens/machine_detail_screen.dart`
+
+#### New Machine Properties
+Added three optional String properties to track additional specifications:
+- `oilCapacity`: e.g., "1.2L", "4 Liters"
+- `frontTiresSize`: e.g., "205/55 R16"
+- `rearTiresSize`: e.g., "225/50 R17"
+
+**Database**: Upgraded to version 5 with migration to add columns
+**Files Modified**:
+- `lib/models/machine.dart` - Added properties to model
+- `lib/services/database_service.dart` - Version 5 migration
+- `lib/screens/add_machine_screen.dart` - Added form fields
+- `lib/screens/edit_machine_screen.dart` - Added form fields
+
+#### New Maintenance Types
+Added three new maintenance types:
+- `maintenanceTypeFrontTires` - Icon: `Icons.trip_origin`
+- `maintenanceTypeRearTires` - Icon: `Icons.trip_origin`
+- `maintenanceTypeBeltsChains` - Icon: `Icons.settings_input_component`
+
+**Files Modified**:
+- `lib/utils/constants.dart` - Added constants and display names
+- `lib/screens/machine_detail_screen.dart` - Added icon cases
+
+#### Documentation Cleanup
+**Actions Taken**:
+1. **Removed** four "setup complete" summary files from root:
+   - `NOTIFICATION_SETUP.md` (duplicate of copilot-instructions/notifications.md)
+   - `DATA_PERSISTENCE.md` (duplicate of copilot-instructions/database-backup.md)
+   - `ANDROID_SETUP_GUIDE.md` (duplicate of copilot-instructions/android-requirements.md)
+   - `PIPELINE_FLOW.md` (duplicate of copilot-instructions/ci-cd-pipeline.md)
+
+2. **Moved** legitimate documentation to copilot-instructions:
+   - `JENKINS_SETUP.md` → `.github/copilot-instructions/jenkins-setup.md`
+
+3. **Added** mandatory rule: No markdown files in root except `README.md`
+
+**Project Structure**: Root directory now clean with only essential files and README.md
