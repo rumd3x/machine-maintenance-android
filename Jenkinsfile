@@ -22,11 +22,23 @@ pipeline {
             defaultValue: false,
             description: 'Publish to Google Play Store (requires Play Store credentials configured)'
         )
-        choice(
+        [$class: 'CascadeChoiceParameter',
+            choiceType: 'PT_SINGLE_SELECT',
             name: 'PLAY_STORE_TRACK',
-            choices: ['production', 'internal', 'beta', 'alpha'],
-            description: 'Play Store release track (production = public release, internal = testing with up to 100 users)'
-        )
+            description: 'Play Store release track (internal = safe for testing, production = public release)',
+            referencedParameters: 'PUBLISH_TO_PLAY_STORE',
+            script: [
+                $class: 'GroovyScript',
+                script: [
+                    script: '''
+                        if (PUBLISH_TO_PLAY_STORE == 'true') {
+                            return ['internal', 'production', 'beta', 'alpha']
+                        }
+                        return []
+                    '''
+                ]
+            ]
+        ]
     }
     
     environment {
@@ -293,7 +305,9 @@ EOF
             }
             steps {
                 script {
-                    echo "Publishing to Google Play Store (${params.PLAY_STORE_TRACK} track)..."
+                    // Use default track if parameter not set (when checkbox unchecked)
+                    def track = params.PLAY_STORE_TRACK ?: 'internal'
+                    echo "Publishing to Google Play Store (${track} track)..."
                     
                     withCredentials([file(
                         credentialsId: env.PLAY_STORE_CREDENTIALS_ID,
@@ -309,7 +323,7 @@ EOF
                         writeFile file: 'android/app/src/main/play/release-notes/en-US/default.txt', text: releaseNotesContent
                         
                         // Set track via environment variable
-                        def trackEnv = "PLAY_STORE_TRACK=${params.PLAY_STORE_TRACK}"
+                        def trackEnv = "PLAY_STORE_TRACK=${track}"
                         
                         // Publish to Play Store using Gradle task
                         sh """
@@ -317,11 +331,11 @@ EOF
                             ${trackEnv} ./gradlew publishBundle --no-daemon
                         """
                         
-                        if (params.PLAY_STORE_TRACK == 'production') {
+                        if (track == 'production') {
                             echo "✅ Published to Play Store (PRODUCTION - public release)"
                             echo "Release will be available after Google's review (1-7 days)"
                         } else {
-                            echo "✅ Published to Play Store (${params.PLAY_STORE_TRACK} track)"
+                            echo "✅ Published to Play Store (${track} track)"
                             echo "Visit https://play.google.com/console to promote to production"
                         }
                     }
@@ -357,7 +371,8 @@ EOF
                 echo "GitHub Release: https://github.com/${env.GITHUB_REPO}/releases/tag/${env.VERSION_TAG}"
                 
                 if (params.PUBLISH_TO_PLAY_STORE == true) {
-                    echo "✅ Published to Play Store (${params.PLAY_STORE_TRACK} track)"
+                    def track = params.PLAY_STORE_TRACK ?: 'internal'
+                    echo "✅ Published to Play Store (${track} track)"
                     echo "Play Console: https://play.google.com/console"
                 }
             }
