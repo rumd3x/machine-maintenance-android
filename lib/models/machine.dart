@@ -9,8 +9,11 @@ class Machine {
   final String? serialNumber;
   final String? sparkPlugType;
   final String? oilType;
+  final String? oilCapacity; // Oil capacity in liters
   final String? fuelType;
   final double? tankSize;
+  final String? frontTiresSize; // e.g., "205/55 R16"
+  final String? rearTiresSize; // e.g., "225/50 R17"
   final String? imagePath;
   final double currentOdometer; // km for vehicles, hours for machines
   final String odometerUnit; // 'km' or 'hours'
@@ -27,8 +30,11 @@ class Machine {
     this.serialNumber,
     this.sparkPlugType,
     this.oilType,
+    this.oilCapacity,
     this.fuelType,
     this.tankSize,
+    this.frontTiresSize,
+    this.rearTiresSize,
     this.imagePath,
     required this.currentOdometer,
     required this.odometerUnit,
@@ -49,8 +55,11 @@ class Machine {
       'serialNumber': serialNumber,
       'sparkPlugType': sparkPlugType,
       'oilType': oilType,
+      'oilCapacity': oilCapacity,
       'fuelType': fuelType,
       'tankSize': tankSize,
+      'frontTiresSize': frontTiresSize,
+      'rearTiresSize': rearTiresSize,
       'imagePath': imagePath,
       'currentOdometer': currentOdometer,
       'odometerUnit': odometerUnit,
@@ -71,8 +80,11 @@ class Machine {
       serialNumber: map['serialNumber'] as String?,
       sparkPlugType: map['sparkPlugType'] as String?,
       oilType: map['oilType'] as String?,
+      oilCapacity: map['oilCapacity'] as String?,
       fuelType: map['fuelType'] as String?,
       tankSize: map['tankSize'] as double?,
+      frontTiresSize: map['frontTiresSize'] as String?,
+      rearTiresSize: map['rearTiresSize'] as String?,
       imagePath: map['imagePath'] as String?,
       currentOdometer: map['currentOdometer'] as double,
       odometerUnit: map['odometerUnit'] as String,
@@ -92,8 +104,11 @@ class Machine {
     String? serialNumber,
     String? sparkPlugType,
     String? oilType,
+    String? oilCapacity,
     String? fuelType,
     double? tankSize,
+    String? frontTiresSize,
+    String? rearTiresSize,
     String? imagePath,
     double? currentOdometer,
     String? odometerUnit,
@@ -110,8 +125,11 @@ class Machine {
       serialNumber: serialNumber ?? this.serialNumber,
       sparkPlugType: sparkPlugType ?? this.sparkPlugType,
       oilType: oilType ?? this.oilType,
+      oilCapacity: oilCapacity ?? this.oilCapacity,
       fuelType: fuelType ?? this.fuelType,
       tankSize: tankSize ?? this.tankSize,
+      frontTiresSize: frontTiresSize ?? this.frontTiresSize,
+      rearTiresSize: rearTiresSize ?? this.rearTiresSize,
       imagePath: imagePath ?? this.imagePath,
       currentOdometer: currentOdometer ?? this.currentOdometer,
       odometerUnit: odometerUnit ?? this.odometerUnit,

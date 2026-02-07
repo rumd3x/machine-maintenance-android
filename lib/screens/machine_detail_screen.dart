@@ -691,6 +691,11 @@ class _MachineDetailScreenState extends State<MachineDetailScreen> {
         return Icons.electrical_services;
       case maintenanceTypeFuel:
         return Icons.local_gas_station;
+      case maintenanceTypeFrontTires:
+      case maintenanceTypeRearTires:
+        return Icons.trip_origin;
+      case maintenanceTypeBeltsChains:
+        return Icons.settings_input_component;
       default:
         return Icons.build;
     }

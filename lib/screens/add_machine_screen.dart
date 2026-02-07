@@ -27,7 +27,10 @@ class _AddMachineScreenState extends State<AddMachineScreen> {
   late final TextEditingController _serialNumberController;
   late final TextEditingController _sparkPlugTypeController;
   late final TextEditingController _oilTypeController;
+  late final TextEditingController _oilCapacityController;
   late final TextEditingController _fuelTypeController;
+  late final TextEditingController _frontTiresSizeController;
+  late final TextEditingController _rearTiresSizeController;
   late final TextEditingController _odometerController;
   late final TextEditingController _tankSizeController;
   
@@ -48,7 +51,10 @@ class _AddMachineScreenState extends State<AddMachineScreen> {
     _serialNumberController = TextEditingController();
     _sparkPlugTypeController = TextEditingController();
     _oilTypeController = TextEditingController();
+    _oilCapacityController = TextEditingController();
     _fuelTypeController = TextEditingController();
+    _frontTiresSizeController = TextEditingController();
+    _rearTiresSizeController = TextEditingController();
     _odometerController = TextEditingController(text: '0');
     _tankSizeController = TextEditingController();
   }
@@ -62,7 +68,10 @@ class _AddMachineScreenState extends State<AddMachineScreen> {
     _serialNumberController.dispose();
     _sparkPlugTypeController.dispose();
     _oilTypeController.dispose();
+    _oilCapacityController.dispose();
     _fuelTypeController.dispose();
+    _frontTiresSizeController.dispose();
+    _rearTiresSizeController.dispose();
     _odometerController.dispose();
     _tankSizeController.dispose();
     super.dispose();
@@ -205,6 +214,18 @@ class _AddMachineScreenState extends State<AddMachineScreen> {
             ),
             const SizedBox(height: 16),
             
+            // Oil Capacity (Optional)
+            TextFormField(
+              controller: _oilCapacityController,
+              decoration: const InputDecoration(
+                labelText: 'Oil Capacity',
+                hintText: 'e.g., 1.2L, 4 Liters',
+                prefixIcon: Icon(Icons.water_drop),
+              ),
+              textCapitalization: TextCapitalization.characters,
+            ),
+            const SizedBox(height: 16),
+            
             // Fuel Type (Optional)
             TextFormField(
               controller: _fuelTypeController,
@@ -214,6 +235,30 @@ class _AddMachineScreenState extends State<AddMachineScreen> {
                 prefixIcon: Icon(Icons.local_gas_station),
               ),
               textCapitalization: TextCapitalization.words,
+            ),
+            const SizedBox(height: 16),
+            
+            // Front Tires Size (Optional)
+            TextFormField(
+              controller: _frontTiresSizeController,
+              decoration: const InputDecoration(
+                labelText: 'Front Tires Size',
+                hintText: 'e.g., 205/55 R16',
+                prefixIcon: Icon(Icons.circle_outlined),
+              ),
+              textCapitalization: TextCapitalization.characters,
+            ),
+            const SizedBox(height: 16),
+            
+            // Rear Tires Size (Optional)
+            TextFormField(
+              controller: _rearTiresSizeController,
+              decoration: const InputDecoration(
+                labelText: 'Rear Tires Size',
+                hintText: 'e.g., 225/50 R17',
+                prefixIcon: Icon(Icons.circle_outlined),
+              ),
+              textCapitalization: TextCapitalization.characters,
             ),
             const SizedBox(height: 16),
             
@@ -517,9 +562,18 @@ class _AddMachineScreenState extends State<AddMachineScreen> {
         oilType: _oilTypeController.text.trim().isEmpty
             ? null
             : _oilTypeController.text.trim(),
+        oilCapacity: _oilCapacityController.text.trim().isEmpty
+            ? null
+            : _oilCapacityController.text.trim(),
         fuelType: _fuelTypeController.text.trim().isEmpty
             ? null
             : _fuelTypeController.text.trim(),
+        frontTiresSize: _frontTiresSizeController.text.trim().isEmpty
+            ? null
+            : _frontTiresSizeController.text.trim(),
+        rearTiresSize: _rearTiresSizeController.text.trim().isEmpty
+            ? null
+            : _rearTiresSizeController.text.trim(),
         currentOdometer: double.parse(_odometerController.text.trim()),
         odometerUnit: _odometerUnit,
         tankSize: _tankSizeController.text.trim().isEmpty

@@ -28,8 +28,11 @@ class _EditMachineScreenState extends State<EditMachineScreen> {
   late final TextEditingController _yearController;
   late final TextEditingController _serialNumberController;
   late final TextEditingController _oilTypeController;
+  late final TextEditingController _oilCapacityController;
   late final TextEditingController _sparkPlugTypeController;
   late final TextEditingController _fuelTypeController;
+  late final TextEditingController _frontTiresSizeController;
+  late final TextEditingController _rearTiresSizeController;
   late final TextEditingController _tankSizeController;
   late final TextEditingController _odometerController;
 
@@ -48,8 +51,11 @@ class _EditMachineScreenState extends State<EditMachineScreen> {
     _yearController = TextEditingController(text: widget.machine.year ?? '');
     _serialNumberController = TextEditingController(text: widget.machine.serialNumber ?? '');
     _oilTypeController = TextEditingController(text: widget.machine.oilType ?? '');
+    _oilCapacityController = TextEditingController(text: widget.machine.oilCapacity ?? '');
     _sparkPlugTypeController = TextEditingController(text: widget.machine.sparkPlugType ?? '');
     _fuelTypeController = TextEditingController(text: widget.machine.fuelType ?? '');
+    _frontTiresSizeController = TextEditingController(text: widget.machine.frontTiresSize ?? '');
+    _rearTiresSizeController = TextEditingController(text: widget.machine.rearTiresSize ?? '');
     _tankSizeController = TextEditingController(
       text: widget.machine.tankSize?.toStringAsFixed(1) ?? '',
     );
@@ -69,8 +75,11 @@ class _EditMachineScreenState extends State<EditMachineScreen> {
     _yearController.dispose();
     _serialNumberController.dispose();
     _oilTypeController.dispose();
+    _oilCapacityController.dispose();
     _sparkPlugTypeController.dispose();
     _fuelTypeController.dispose();
+    _frontTiresSizeController.dispose();
+    _rearTiresSizeController.dispose();
     _tankSizeController.dispose();
     _odometerController.dispose();
     super.dispose();
@@ -176,9 +185,18 @@ class _EditMachineScreenState extends State<EditMachineScreen> {
         oilType: _oilTypeController.text.trim().isEmpty
             ? null
             : _oilTypeController.text.trim(),
+        oilCapacity: _oilCapacityController.text.trim().isEmpty
+            ? null
+            : _oilCapacityController.text.trim(),
         fuelType: _fuelTypeController.text.trim().isEmpty
             ? null
             : _fuelTypeController.text.trim(),
+        frontTiresSize: _frontTiresSizeController.text.trim().isEmpty
+            ? null
+            : _frontTiresSizeController.text.trim(),
+        rearTiresSize: _rearTiresSizeController.text.trim().isEmpty
+            ? null
+            : _rearTiresSizeController.text.trim(),
         tankSize: _tankSizeController.text.trim().isEmpty
             ? null
             : double.tryParse(_tankSizeController.text.trim()),
@@ -359,6 +377,18 @@ class _EditMachineScreenState extends State<EditMachineScreen> {
               textCapitalization: TextCapitalization.characters,
             ),
             const SizedBox(height: 16),
+            
+            // Oil Capacity
+            TextFormField(
+              controller: _oilCapacityController,
+              decoration: const InputDecoration(
+                labelText: 'Oil Capacity',
+                hintText: 'e.g., 1.2L, 4 Liters',
+                prefixIcon: Icon(Icons.water_drop),
+              ),
+              textCapitalization: TextCapitalization.characters,
+            ),
+            const SizedBox(height: 16),
 
             // Fuel Type
             TextFormField(
@@ -369,6 +399,30 @@ class _EditMachineScreenState extends State<EditMachineScreen> {
                 prefixIcon: Icon(Icons.local_gas_station),
               ),
               textCapitalization: TextCapitalization.words,
+            ),
+            const SizedBox(height: 16),
+            
+            // Front Tires Size
+            TextFormField(
+              controller: _frontTiresSizeController,
+              decoration: const InputDecoration(
+                labelText: 'Front Tires Size',
+                hintText: 'e.g., 205/55 R16',
+                prefixIcon: Icon(Icons.circle_outlined),
+              ),
+              textCapitalization: TextCapitalization.characters,
+            ),
+            const SizedBox(height: 16),
+            
+            // Rear Tires Size
+            TextFormField(
+              controller: _rearTiresSizeController,
+              decoration: const InputDecoration(
+                labelText: 'Rear Tires Size',
+                hintText: 'e.g., 225/50 R17',
+                prefixIcon: Icon(Icons.circle_outlined),
+              ),
+              textCapitalization: TextCapitalization.characters,
             ),
             const SizedBox(height: 16),
 

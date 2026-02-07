@@ -28,7 +28,7 @@ class DatabaseService {
     try {
       return await openDatabase(
         path,
-        version: 4,
+        version: 5,
         onCreate: _onCreate,
         onUpgrade: _onUpgrade,
       );
@@ -46,7 +46,7 @@ class DatabaseService {
         // Try again with fresh database
         return await openDatabase(
           path,
-          version: 4,
+          version: 5,
           onCreate: _onCreate,
           onUpgrade: _onUpgrade,
         );
@@ -107,6 +107,27 @@ class DatabaseService {
         // Column might already exist, ignore
       }
     }
+    
+    if (oldVersion < 5) {
+      // Add new machine properties columns
+      try {
+        await db.execute('ALTER TABLE machines ADD COLUMN oilCapacity TEXT');
+      } catch (e) {
+        // Column might already exist, ignore
+      }
+      
+      try {
+        await db.execute('ALTER TABLE machines ADD COLUMN frontTiresSize TEXT');
+      } catch (e) {
+        // Column might already exist, ignore
+      }
+      
+      try {
+        await db.execute('ALTER TABLE machines ADD COLUMN rearTiresSize TEXT');
+      } catch (e) {
+        // Column might already exist, ignore
+      }
+    }
   }
 
   Future<void> _onCreate(Database db, int version) async {
@@ -122,8 +143,11 @@ class DatabaseService {
         serialNumber TEXT,
         sparkPlugType TEXT,
         oilType TEXT,
+        oilCapacity TEXT,
         fuelType TEXT,
         tankSize REAL,
+        frontTiresSize TEXT,
+        rearTiresSize TEXT,
         imagePath TEXT,
         currentOdometer REAL NOT NULL,
         odometerUnit TEXT NOT NULL,

@@ -13,6 +13,9 @@ const String maintenanceTypeSparkPlug = 'spark_plug_change';
 const String maintenanceTypeBrakeInspection = 'brake_inspection';
 const String maintenanceTypeGeneral = 'general_maintenance';
 const String maintenanceTypeFuel = 'fuel';
+const String maintenanceTypeFrontTires = 'front_tires';
+const String maintenanceTypeRearTires = 'rear_tires';
+const String maintenanceTypeBeltsChains = 'belts_chains';
 
 // Maintenance type display names
 const Map<String, String> maintenanceTypeNames = {
@@ -25,6 +28,9 @@ const Map<String, String> maintenanceTypeNames = {
   maintenanceTypeBrakeInspection: 'Brakes',
   maintenanceTypeGeneral: 'General Service',
   maintenanceTypeFuel: 'Fuel',
+  maintenanceTypeFrontTires: 'Front Tires',
+  maintenanceTypeRearTires: 'Rear Tires',
+  maintenanceTypeBeltsChains: 'Belts/Chains',
 };
 
 // Machine types
