@@ -19,17 +19,17 @@ pipeline {
         )
         booleanParam(
             name: 'PUBLISH_TO_PLAY_STORE',
-            defaultValue: false,
+            defaultValue: true,
             description: 'Publish to Google Play Store (requires Play Store credentials configured)'
         )
         choice(
             name: 'PLAY_STORE_TRACK',
-            choices: ['internal', 'production', 'beta', 'alpha'],
+            choices: ['production', 'beta', 'alpha', 'internal'],
             description: 'Play Store release track (only used when PUBLISH_TO_PLAY_STORE is enabled; internal = safe for testing, production = public release)'
         )
         choice(
             name: 'PLAY_STORE_RELEASE_STATUS',
-            choices: ['draft', 'completed'],
+            choices: ['completed', 'draft'],
             description: 'Release status (draft = requires manual review in Play Console, completed = goes live immediately on selected track). Use DRAFT for apps not yet published.'
         )
     }
