@@ -233,17 +233,59 @@ class NotificationService {
         ),
       );
 
-      // Skip if interval is not enabled or if notification was already sent
+      // Skip if interval is not enabled
       if (!interval.enabled) continue;
 
       // Only schedule for checkSoon and overdue statuses
       if (status.status == MaintenanceStatusType.checkSoon ||
           status.status == MaintenanceStatusType.overdue) {
         
-        // Check if notification was already sent for this maintenance
-        if (interval.notificationSent) {
-          debugPrint('Notification already sent for ${machine.displayName} - $maintenanceType, skipping...');
+        // For checkSoon status, reset flag to allow yellow->red transition
+        // After reset, we'll re-check if already notified for this checkSoon cycle
+        if (status.status == MaintenanceStatusType.checkSoon && interval.notificationSent) {
+          await _dbService.resetNotificationSentFlag(interval.machineId, maintenanceType);
+          debugPrint('Reset flag for ${machine.displayName} - $maintenanceType (checkSoon)');
+          // Reload interval with reset flag
+          interval = await _dbService.getMaintenanceInterval(
+            interval.machineId,
+            maintenanceType,
+          ) ?? interval;
+        }
+        
+        // For checkSoon, check the flag to prevent duplicate scheduled notifications
+        // For overdue, check both flag AND notification history
+        // - Flag prevents notification for newly added machines
+        // - History check prevents duplicates but allows checkSoon->overdue transition
+        if (status.status == MaintenanceStatusType.checkSoon && interval.notificationSent) {
+          debugPrint('Notification already scheduled for ${machine.displayName} - $maintenanceType (checkSoon), skipping...');
           continue;
+        }
+        
+        // For overdue status, check flag first, then notification history
+        if (status.status == MaintenanceStatusType.overdue) {
+          if (interval.notificationSent) {
+            // Flag is set - could be from new machine or previous notification
+            // Check if there's a recent overdue notification to determine if we should skip
+            final hasRecentOverdue = await _hasRecentOverdueNotification(machine.id!, maintenanceType);
+            if (hasRecentOverdue) {
+              debugPrint('Recent overdue notification exists for ${machine.displayName} - $maintenanceType, skipping...');
+              continue;
+            } else {
+              // Flag is set but no recent overdue notification
+              // This means it's either a new machine or checkSoon->overdue transition
+              // For new machines, skip (respect the flag)
+              // For checkSoon->overdue, we need to detect this...
+              // Simple heuristic: check if there's any recent notification (checkSoon or overdue)
+              final hasAnyRecentNotification = await _hasRecentNotification(machine.id!, maintenanceType);
+              if (!hasAnyRecentNotification) {
+                // No recent notifications at all - this is a new machine, skip
+                debugPrint('New machine with no history for ${machine.displayName} - $maintenanceType, skipping...');
+                continue;
+              }
+              // Has recent notification but not overdue - this is checkSoon->overdue transition, allow
+              debugPrint('Allowing overdue notification for ${machine.displayName} - $maintenanceType (checkSoon->overdue transition)');
+            }
+          }
         }
 
         final scheduledDate = _calculateNotificationDate(status);
@@ -273,10 +315,10 @@ class NotificationService {
             saveToDb: false, // Already saved above
           );
           
-          // Mark notification as sent
+          // Mark notification as sent for overdue status
           await _markNotificationSent(interval);
         } else {
-          // For checkSoon, schedule for future
+          // For checkSoon, schedule for future notification
           await scheduleNotification(
             id: notificationId++,
             title: title,
@@ -287,7 +329,7 @@ class NotificationService {
             saveToDb: true,
           );
           
-          // Mark notification as sent
+          // Mark notification as sent to prevent duplicate checkSoon notifications
           await _markNotificationSent(interval);
         }
       }
@@ -301,6 +343,57 @@ class NotificationService {
     final updatedInterval = interval.copyWith(notificationSent: true);
     await _dbService.updateMaintenanceInterval(updatedInterval);
     debugPrint('Marked notification as sent for interval ID ${interval.id}');
+  }
+
+  /// Check if there's a recent overdue notification for this maintenance type
+  /// Returns true if notification exists within the last 24 hours with "overdue" in text
+  Future<bool> _hasRecentOverdueNotification(int machineId, String maintenanceType) async {
+    try {
+      final notifications = await _dbService.getAllNotifications();
+      final oneDayAgo = DateTime.now().subtract(const Duration(hours: 24));
+      
+      // Check if any notification matches this machine and maintenance type, and is overdue
+      final hasRecent = notifications.any((notification) {
+        if (notification.machineId != machineId) return false;
+        if (notification.createdAt.isBefore(oneDayAgo)) return false;
+        
+        // Check if notification contains both the maintenance type and "overdue" keyword
+        final notificationText = '${notification.title} ${notification.body}'.toLowerCase();
+        final maintenanceTypeLower = maintenanceType.toLowerCase().replaceAll('_', ' ');
+        return notificationText.contains(maintenanceTypeLower) && 
+               notificationText.contains('overdue');
+      });
+      
+      return hasRecent;
+    } catch (e) {
+      debugPrint('Error checking recent overdue notifications: $e');
+      return false; // On error, allow notification
+    }
+  }
+
+  /// Check if there's any recent notification (checkSoon or overdue) for this maintenance type
+  /// Returns true if notification exists within the last 7 days
+  Future<bool> _hasRecentNotification(int machineId, String maintenanceType) async {
+    try {
+      final notifications = await _dbService.getAllNotifications();
+      final sevenDaysAgo = DateTime.now().subtract(const Duration(days: 7));
+      
+      // Check if any notification matches this machine and maintenance type
+      final hasRecent = notifications.any((notification) {
+        if (notification.machineId != machineId) return false;
+        if (notification.createdAt.isBefore(sevenDaysAgo)) return false;
+        
+        // Check if notification contains the maintenance type
+        final notificationText = '${notification.title} ${notification.body}'.toLowerCase();
+        final maintenanceTypeLower = maintenanceType.toLowerCase().replaceAll('_', ' ');
+        return notificationText.contains(maintenanceTypeLower);
+      });
+      
+      return hasRecent;
+    } catch (e) {
+      debugPrint('Error checking recent notifications: $e');
+      return false; // On error, allow notification
+    }
   }
 
   /// Cancel all notifications for a specific machine

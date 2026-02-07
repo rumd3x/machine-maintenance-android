@@ -215,6 +215,7 @@ class MaintenanceCalculator {
           ? 100.0 // 100 hours for machines
           : 5000.0, // 5000 km for vehicles
       intervalDays: 180, // 6 months
+      notificationSent: true, // Prevent immediate notification for new machine
     ));
 
     // Filter cleaning
@@ -225,6 +226,7 @@ class MaintenanceCalculator {
           ? 50.0
           : 10000.0,
       intervalDays: 365,
+      notificationSent: true, // Prevent immediate notification for new machine
     ));
 
     // Chain oiling (only for motorcycles)
@@ -234,6 +236,7 @@ class MaintenanceCalculator {
         maintenanceType: maintenanceTypeChainOiling,
         intervalDistance: 500.0, // 500 km
         intervalDays: 30, // monthly
+        notificationSent: true, // Prevent immediate notification for new machine
       ));
     }
 
@@ -246,6 +249,7 @@ class MaintenanceCalculator {
         maintenanceType: maintenanceTypeBrakeInspection,
         intervalDistance: 10000.0,
         intervalDays: 180,
+        notificationSent: true, // Prevent immediate notification for new machine
       ));
     }
 
@@ -256,6 +260,7 @@ class MaintenanceCalculator {
         maintenanceType: maintenanceTypeCoolant,
         intervalDistance: 40000.0,
         intervalDays: 730, // 2 years
+        notificationSent: true, // Prevent immediate notification for new machine
       ));
     }
 

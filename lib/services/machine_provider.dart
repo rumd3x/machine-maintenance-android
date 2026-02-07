@@ -104,26 +104,27 @@ class MachineProvider with ChangeNotifier {
         final intervals = await getMaintenanceIntervals(record.machineId);
         final records = await getMaintenanceRecords(record.machineId);
         
-        // Calculate all statuses to check which are back to OK
+        // Calculate all statuses to check which are no longer overdue
         final statuses = await _calculator.calculateAllStatuses(
           machine: machine,
           intervals: intervals,
           records: records,
         );
         
-        // Find maintenance types that are now optimal (OK status)
-        final okMaintenanceTypes = statuses.entries
-            .where((entry) => entry.value.status == MaintenanceStatusType.optimal)
+        // Find maintenance types that are NOT overdue (optimal or checkSoon)
+        // Reset flag so they can notify again if they become overdue later
+        final notOverdueMaintenanceTypes = statuses.entries
+            .where((entry) => entry.value.status != MaintenanceStatusType.overdue)
             .map((entry) => entry.key)
             .toList();
         
-        // Reset notification flags for maintenance types that are back to OK
-        if (okMaintenanceTypes.isNotEmpty) {
+        // Reset notification flags for maintenance types that are not overdue
+        if (notOverdueMaintenanceTypes.isNotEmpty) {
           await _databaseService.resetNotificationFlagsForOkIntervals(
             record.machineId,
-            okMaintenanceTypes,
+            notOverdueMaintenanceTypes,
           );
-          debugPrint('Reset notification flags for: ${okMaintenanceTypes.join(", ")}');
+          debugPrint('Reset notification flags for non-overdue: ${notOverdueMaintenanceTypes.join(", ")}');
         }
         
         // Reschedule notifications

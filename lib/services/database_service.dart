@@ -369,7 +369,8 @@ class DatabaseService {
     );
   }
 
-  /// Reset notification sent flags for all intervals of a machine that are back to OK status
+  /// Reset notification sent flags for all intervals of a machine that are not overdue
+  /// This allows them to notify again if they become overdue in the future
   Future<void> resetNotificationFlagsForOkIntervals(
     int machineId,
     List<String> okMaintenanceTypes,
