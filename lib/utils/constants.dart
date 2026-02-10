@@ -16,6 +16,7 @@ const String maintenanceTypeFuel = 'fuel';
 const String maintenanceTypeFrontTires = 'front_tires';
 const String maintenanceTypeRearTires = 'rear_tires';
 const String maintenanceTypeBeltsChains = 'belts_chains';
+const String maintenanceTypeBattery = 'battery';
 
 // Maintenance type display names
 const Map<String, String> maintenanceTypeNames = {
@@ -31,6 +32,7 @@ const Map<String, String> maintenanceTypeNames = {
   maintenanceTypeFrontTires: 'Front Tires',
   maintenanceTypeRearTires: 'Rear Tires',
   maintenanceTypeBeltsChains: 'Belts/Chains',
+  maintenanceTypeBattery: 'Battery',
 };
 
 // Machine types

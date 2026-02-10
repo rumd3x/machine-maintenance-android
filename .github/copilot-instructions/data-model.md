@@ -1,6 +1,6 @@
 # Data Model
 
-**Date**: 4 de fevereiro de 2026
+**Date**: 10 de fevereiro de 2026
 
 ## Entity: Machine/Vehicle
 
@@ -17,9 +17,19 @@
 - `nickname`: String
 - `serialNumber`: String
 - `year`: Integer
-- `sparkPlugType`: String
-- `oilType`: String
+- `sparkPlugType`: String (e.g., "NGK CR7HSA")
+- `sparkPlugGap`: String (e.g., "0.8", "0.7-0.9" in mm)
+- `oilType`: String (e.g., "10W-40", "20W-50")
+- `oilCapacity`: String (e.g., "1.2L", "4 Liters")
+- `fuelType`: String (e.g., "Gasoline", "Diesel", "Ethanol")
 - `tankSize`: Float (liters)
+- `frontTiresSize`: String (e.g., "205/55 R16")
+- `rearTiresSize`: String (e.g., "225/50 R17")
+- `frontTirePressure`: String (e.g., "32", "30-32" in PSI)
+- `rearTirePressure`: String (e.g., "36", "34-36" in PSI)
+- `batteryVoltage`: String (e.g., "12", "12.6" in Volts)
+- `batteryCapacity`: String (e.g., "50", "100" in Amp-hours)
+- `batteryType`: String (e.g., "HTZ7L", "YTX9-BS" - battery model/type)
 
 #### Odometer/Usage Tracking
 - `currentOdometer`: Float

@@ -28,7 +28,7 @@ class DatabaseService {
     try {
       return await openDatabase(
         path,
-        version: 5,
+        version: 9,
         onCreate: _onCreate,
         onUpgrade: _onUpgrade,
       );
@@ -46,7 +46,7 @@ class DatabaseService {
         // Try again with fresh database
         return await openDatabase(
           path,
-          version: 5,
+          version: 9,
           onCreate: _onCreate,
           onUpgrade: _onUpgrade,
         );
@@ -128,6 +128,54 @@ class DatabaseService {
         // Column might already exist, ignore
       }
     }
+    
+    if (oldVersion < 6) {
+      // Add sparkPlugGap column to machines table
+      try {
+        await db.execute('ALTER TABLE machines ADD COLUMN sparkPlugGap TEXT');
+      } catch (e) {
+        // Column might already exist, ignore
+      }
+    }
+    
+    if (oldVersion < 7) {
+      // Add tire pressure columns to machines table
+      try {
+        await db.execute('ALTER TABLE machines ADD COLUMN frontTirePressure TEXT');
+      } catch (e) {
+        // Column might already exist, ignore
+      }
+      
+      try {
+        await db.execute('ALTER TABLE machines ADD COLUMN rearTirePressure TEXT');
+      } catch (e) {
+        // Column might already exist, ignore
+      }
+    }
+    
+    if (oldVersion < 8) {
+      // Add battery columns to machines table
+      try {
+        await db.execute('ALTER TABLE machines ADD COLUMN batteryVoltage TEXT');
+      } catch (e) {
+        // Column might already exist, ignore
+      }
+      
+      try {
+        await db.execute('ALTER TABLE machines ADD COLUMN batteryCapacity TEXT');
+      } catch (e) {
+        // Column might already exist, ignore
+      }
+    }
+    
+    if (oldVersion < 9) {
+      // Add batteryType column to machines table
+      try {
+        await db.execute('ALTER TABLE machines ADD COLUMN batteryType TEXT');
+      } catch (e) {
+        // Column might already exist, ignore
+      }
+    }
   }
 
   Future<void> _onCreate(Database db, int version) async {
@@ -142,12 +190,18 @@ class DatabaseService {
         year TEXT,
         serialNumber TEXT,
         sparkPlugType TEXT,
+        sparkPlugGap TEXT,
         oilType TEXT,
         oilCapacity TEXT,
         fuelType TEXT,
         tankSize REAL,
         frontTiresSize TEXT,
         rearTiresSize TEXT,
+        frontTirePressure TEXT,
+        rearTirePressure TEXT,
+        batteryVoltage TEXT,
+        batteryCapacity TEXT,
+        batteryType TEXT,
         imagePath TEXT,
         currentOdometer REAL NOT NULL,
         odometerUnit TEXT NOT NULL,

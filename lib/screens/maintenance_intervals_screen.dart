@@ -127,6 +127,9 @@ class _MaintenanceIntervalsScreenState extends State<MaintenanceIntervalsScreen>
                       onPressed: () => _editInterval(interval),
                       icon: const Icon(Icons.edit, size: 16),
                       label: const Text('Edit'),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: AppTheme.accentBlue,
+                      ),
                     ),
                   ),
                   const SizedBox(width: 8),
@@ -267,8 +270,9 @@ class _MaintenanceIntervalsScreenState extends State<MaintenanceIntervalsScreen>
     );
 
     if (confirmed == true) {
-      await context.read<MachineProvider>().saveMaintenanceInterval(
-        interval.copyWith(enabled: false),
+      await context.read<MachineProvider>().deleteMaintenanceInterval(
+        interval.id!,
+        widget.machine.id!,
       );
       await _loadIntervals();
       

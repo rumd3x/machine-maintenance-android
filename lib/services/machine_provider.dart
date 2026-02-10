@@ -36,7 +36,33 @@ class MachineProvider with ChangeNotifier {
   Future<void> addMachine(Machine machine) async {
     try {
       final id = await _databaseService.insertMachine(machine);
-      final newMachine = machine.copyWith(id: id);
+      final newMachine = machine.copyWith(
+        id: id,
+        type: machine.type,
+        brand: machine.brand,
+        model: machine.model,
+        nickname: machine.nickname,
+        year: machine.year,
+        serialNumber: machine.serialNumber,
+        sparkPlugType: machine.sparkPlugType,
+        sparkPlugGap: machine.sparkPlugGap,
+        oilType: machine.oilType,
+        oilCapacity: machine.oilCapacity,
+        fuelType: machine.fuelType,
+        tankSize: machine.tankSize,
+        frontTiresSize: machine.frontTiresSize,
+        rearTiresSize: machine.rearTiresSize,
+        frontTirePressure: machine.frontTirePressure,
+        rearTirePressure: machine.rearTirePressure,
+        batteryVoltage: machine.batteryVoltage,
+        batteryCapacity: machine.batteryCapacity,
+        batteryType: machine.batteryType,
+        imagePath: machine.imagePath,
+        currentOdometer: machine.currentOdometer,
+        odometerUnit: machine.odometerUnit,
+        createdAt: machine.createdAt,
+        updatedAt: machine.updatedAt,
+      );
       _machines.insert(0, newMachine);
       notifyListeners();
       
@@ -193,6 +219,36 @@ class MachineProvider with ChangeNotifier {
     }
   }
 
+  /// Update an existing maintenance record
+  Future<void> updateMaintenanceRecord(MaintenanceRecord record) async {
+    try {
+      await _databaseService.updateMaintenanceRecord(record);
+      notifyListeners();
+      
+      // Recalculate maintenance statuses and reschedule notifications
+      final machine = getMachine(record.machineId);
+      if (machine != null) {
+        final intervals = await getMaintenanceIntervals(record.machineId);
+        final records = await getMaintenanceRecords(record.machineId);
+        
+        // Calculate all statuses
+        final statuses = await _calculator.calculateAllStatuses(
+          machine: machine,
+          intervals: intervals,
+          records: records,
+        );
+        
+        // Reschedule notifications based on updated maintenance
+        await _scheduleNotificationsForMachine(machine);
+        
+        debugPrint('Updated maintenance record ${record.id} and recalculated statuses');
+      }
+    } catch (e) {
+      debugPrint('Error updating maintenance record: $e');
+      rethrow;
+    }
+  }
+
   /// Add or update maintenance interval
   Future<void> saveMaintenanceInterval(MaintenanceInterval interval) async {
     try {
@@ -217,6 +273,23 @@ class MachineProvider with ChangeNotifier {
     } catch (e) {
       debugPrint('Error getting maintenance intervals: $e');
       return [];
+    }
+  }
+
+  /// Delete a maintenance interval
+  Future<void> deleteMaintenanceInterval(int intervalId, int machineId) async {
+    try {
+      await _databaseService.deleteMaintenanceInterval(intervalId);
+      notifyListeners();
+      
+      // Reschedule notifications after interval deletion
+      final machine = getMachine(machineId);
+      if (machine != null) {
+        await _scheduleNotificationsForMachine(machine);
+      }
+    } catch (e) {
+      debugPrint('Error deleting maintenance interval: $e');
+      rethrow;
     }
   }
 

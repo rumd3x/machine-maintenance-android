@@ -2,18 +2,60 @@
 
 **🚨 CRITICAL**: Before making ANY code changes, read [DOCUMENTATION-MANDATE.md](copilot-instructions/DOCUMENTATION-MANDATE.md). **All code changes MUST be documented immediately.**
 
-## 🔴 MANDATORY DOCUMENTATION RULE
+## 🔴 MANDATORY DOCUMENTATION WORKFLOW
 
-**ALWAYS** document every change made in this file (`copilot-instructions.md`):
+### BEFORE Making Code Changes:
+1. **Check `.github/copilot-instructions/` folder** for relevant documentation files
+2. **Read** the following files to understand current state:
+   - `progress.md` - Recent changes and current status
+   - `data-model.md` - Database schema and entity structure
+   - `features.md` - Feature specifications
+   - `technical-architecture.md` - Architecture decisions
+   - Any other relevant topic-specific files
+3. **Understand** existing patterns and conventions before implementing changes
 
-1. **During active work**: Document significant changes, patterns, and decisions as you make them
-2. **End of conversation**: Review ALL changes made and ensure they are documented in the appropriate section
-3. **New features**: Document the feature, its location, usage patterns, and any gotchas
-4. **Bug fixes**: Document what was broken, how it was fixed, and the correct pattern going forward
-5. **Architecture changes**: Document the new approach, why it was changed, and migration notes
-6. **UI/UX changes**: Document the pattern, component usage, and styling guidelines
+### DURING Code Changes:
+1. **Note** all changes being made (files, features, patterns)
+2. **Track** which documentation files need updates
+3. **Follow** existing patterns and conventions from documentation
 
-**Never leave a conversation without updating this documentation file.**
+### AFTER Making Code Changes:
+1. **Update** this file (`copilot-instructions.md`) with:
+   - New features and their usage patterns
+   - Changed patterns or conventions
+   - Important gotchas or warnings
+   - Database version changes
+   - New dependencies or configurations
+
+2. **Update** relevant files in `.github/copilot-instructions/`:
+   - `progress.md` - Add session summary with date
+   - `data-model.md` - Update if database schema changed
+   - `features.md` - Update if features added/changed
+   - `ui-design.md` - Update if UI patterns changed
+   - `technical-architecture.md` - Update if architecture changed
+
+3. **Document**:
+   - New features: Feature description, location, usage patterns, gotchas
+   - Bug fixes: What was broken, how it was fixed, correct pattern going forward
+   - Architecture changes: New approach, why it changed, migration notes
+   - UI/UX changes: Pattern, component usage, styling guidelines
+   - Database changes: Version number, migration, new fields/tables
+
+### Documentation Standards:
+- **ALWAYS** include date at top of documentation files
+- **ALWAYS** increment database version number when schema changes
+- **NEVER** leave a conversation without updating documentation
+- **NEVER** create markdown files in project root (except README.md)
+
+### Quick Checklist:
+Before ending any conversation, ask yourself:
+- [ ] Did I update `copilot-instructions.md` with new patterns?
+- [ ] Did I update `progress.md` with today's session?
+- [ ] Did I update relevant topic files (data-model, features, etc.)?
+- [ ] Did I document database version changes?
+- [ ] Did I document any new dependencies?
+
+**Remember: Future AI assistants rely on this documentation to understand the codebase. Poor documentation leads to broken patterns and bugs.**
 
 ### Documentation File Placement
 
@@ -43,7 +85,12 @@ When modifying either `add_machine_screen.dart` or `edit_machine_screen.dart`, *
    - Use `FilterChip` with icons (not `ChoiceChip` without icons)
    - Auto-switch odometer unit: Generator/Machine → hours, Vehicle/Motorcycle → km
 
-2. **Field Order** (must be identical):
+2. **Conditional Field Visibility**
+   - **Tire fields** (Front/Rear Size and Pressure): Only visible when type is Vehicle or Motorcycle
+   - Condition: `if (_selectedType == machineTypeVehicle || _selectedType == machineTypeMotorcycle)`
+   - Hidden for Generator and Machine types as they don't have tires
+
+3. **Field Order** (must be identical):
    1. Image Picker
    2. Machine Type
    3. Brand (required)
@@ -52,13 +99,19 @@ When modifying either `add_machine_screen.dart` or `edit_machine_screen.dart`, *
    6. Year (optional)
    7. Serial Number (optional)
    8. Spark Plug Type (optional)
-   9. Oil Type (optional)
-   10. Oil Capacity (optional)
-   11. Fuel Type (optional)
-   12. Front Tires Size (optional)
-   13. Rear Tires Size (optional)
-   14. Current Odometer (required)
-   15. Tank Size (optional)
+   9. Spark Plug Gap (mm) (optional)
+   10. Oil Type (optional)
+   11. Oil Capacity (optional)
+   12. Fuel Type (optional)
+   13. Front Tires Size (optional)
+   14. Rear Tires Size (optional)
+   15. Front Tire Pressure (PSI) (optional)
+   16. Rear Tire Pressure (PSI) (optional)
+   17. Battery Voltage (V) (optional)
+   18. Battery Capacity (Ah) (optional)
+   19. Battery Type/Model (optional)
+   20. Tank Size (optional)
+   21. Current Odometer (required)
 
 3. **Field Properties** (must match exactly):
    - **Icons**: 
@@ -67,32 +120,41 @@ When modifying either `add_machine_screen.dart` or `edit_machine_screen.dart`, *
      - Nickname: `Icons.label`
      - Year: `Icons.calendar_today`
      - Serial Number: `Icons.numbers`
-     - Spark Plug: `Icons.electrical_services`
+     - Spark Plug Type: `Icons.electrical_services`
+     - Spark Plug Gap: `Icons.electrical_services`
      - Oil Type: `Icons.water_drop`
      - Oil Capacity: `Icons.water_drop`
      - Fuel Type: `Icons.local_gas_station`
      - Front Tires Size: `Icons.circle_outlined`
      - Rear Tires Size: `Icons.circle_outlined`
-     - Odometer: `Icons.speed`
+     - Front Tire Pressure: `Icons.speed`
+     - Rear Tire Pressure: `Icons.speed`
+     - Battery Voltage: `Icons.battery_charging_full`
+     - Battery Capacity: `Icons.battery_std`
+     - Battery Type: `Icons.battery_full`
      - Tank Size: `Icons.local_gas_station`
+     - Odometer: `Icons.speed`
    
    - **Hints**:
      - Brand: `'e.g., Suzuki, Honda, Yamaha'`
      - Model: `'e.g., Intruder 125, CG 160'`
      - Nickname: `'e.g., My Bike, Work Car'`
+     - Year: `'e.g., 2008'`
+     - Serial Number: `'VIN or chassis number'`
+     - Spark Plug Type: `'e.g., NGK CR7HSA'`
+     - Spark Plug Gap: `'e.g., 0.8, 0.7-0.9'`
      - Oil Type: `'e.g., 10W-40, 20W-50'`
      - Oil Capacity: `'e.g., 1.2L, 4 Liters'`
      - Fuel Type: `'e.g., Gasoline, Diesel, Ethanol'`
      - Front Tires Size: `'e.g., 205/55 R16'`
      - Rear Tires Size: `'e.g., 225/50 R17'`
-     - Nickname: `'e.g., My Bike, Work Car'`
-     - Year: `'e.g., 2008'`
-     - Serial Number: `'VIN or chassis number'`
-     - Spark Plug: `'e.g., NGK CR7HSA'`
-     - Oil Type: `'e.g., 10W-40, 20W-50'`
-     - Fuel Type: `'e.g., Gasoline, Diesel, Ethanol'`
-     - Odometer: `'0'`
+     - Front Tire Pressure: `'e.g., 32, 30-32'`
+     - Rear Tire Pressure: `'e.g., 36, 34-36'`
+     - Battery Voltage: `'e.g., 12, 12.6'`
+     - Battery Capacity: `'e.g., 50, 100'`
+     - Battery Type: `'e.g., HTZ7L, YTX9-BS'`
      - Tank Size: `'e.g., 10.0'`
+     - Odometer: `'0'`
    
    - **Validators**: Use identical error messages
      - Brand: `'Brand is required'`
@@ -111,7 +173,7 @@ When modifying either `add_machine_screen.dart` or `edit_machine_screen.dart`, *
 
 6. **Text Capitalization**:
    - Brand, Model, Nickname, Fuel Type: `TextCapitalization.words`
-   - Serial Number, Spark Plug, Oil Type: `TextCapitalization.characters`
+   - Serial Number, Spark Plug, Oil Type, Battery Type: `TextCapitalization.characters`
 
 ### When Making Changes:
 
@@ -156,7 +218,7 @@ import '../utils/constants.dart';
 
 ### Database Structure
 
-**Current Version**: 5
+**Current Version**: 9
 
 #### Version History:
 - **v1**: Initial schema (machines, maintenance_records, maintenance_intervals)
@@ -164,6 +226,10 @@ import '../utils/constants.dart';
 - **v3**: Added `notifications` table
 - **v4**: Added `notificationSent` flag to maintenance_intervals
 - **v5**: Added `oilCapacity`, `frontTiresSize`, `rearTiresSize` to machines
+- **v6**: Added `frontTirePressure`, `rearTirePressure` to machines
+- **v7**: Added `batteryVoltage`, `batteryCapacity` to machines
+- **v8**: (skipped - version number error)
+- **v9**: Added `batteryType` to machines
 
 #### Notifications Table Schema:
 ```sql
@@ -371,12 +437,18 @@ Notifications require these permissions in `AndroidManifest.xml`:
 
 ### Specifications
 - `sparkPlugType`: e.g., "NGK CR7HSA"
+- `sparkPlugGap`: e.g., "0.8", "0.7-0.9" (in mm)
 - `oilType`: e.g., "10W-40", "20W-50"
 - `oilCapacity`: e.g., "1.2L", "4 Liters"
 - `fuelType`: e.g., "Gasoline", "Diesel", "Ethanol"
 - `tankSize`: Numeric value in liters
 - `frontTiresSize`: e.g., "205/55 R16"
 - `rearTiresSize`: e.g., "225/50 R17"
+- `frontTirePressure`: e.g., "32", "30-32" (in PSI)
+- `rearTirePressure`: e.g., "36", "34-36" (in PSI)
+- `batteryVoltage`: e.g., "12", "12.6" (in Volts)
+- `batteryCapacity`: e.g., "50", "100" (in Amp-hours)
+- `batteryType`: e.g., "HTZ7L", "YTX9-BS" (battery model/type)
 - `imagePath`: Optional photo path
 
 ## Maintenance Types
@@ -397,6 +469,7 @@ Defined in `lib/utils/constants.dart`:
 10. **Front Tires** (`maintenanceTypeFrontTires`) - Icon: `Icons.trip_origin`
 11. **Rear Tires** (`maintenanceTypeRearTires`) - Icon: `Icons.trip_origin`
 12. **Belts/Chains** (`maintenanceTypeBeltsChains`) - Icon: `Icons.settings_input_component`
+13. **Battery** (`maintenanceTypeBattery`) - Icon: `Icons.battery_charging_full`
 
 ### Adding New Maintenance Types
 
@@ -406,6 +479,81 @@ Defined in `lib/utils/constants.dart`:
 4. No database migration needed (maintenanceType is TEXT field)
 
 ## Recent Changes and Improvements
+
+### Session: February 10, 2026 - Form Layout Improvements and Battery Type Field
+
+#### Conditional Field Visibility
+**Feature**: Tire fields now conditionally display based on machine type.
+
+**Implementation**:
+- Tire fields (Front/Rear Size and Pressure) only visible for Vehicle and Motorcycle types
+- Hidden for Generator and Machine types (they don't have tires)
+- Condition: `if (_selectedType == machineTypeVehicle || _selectedType == machineTypeMotorcycle)`
+- Wrapped in spread operator collection for clean conditional rendering
+
+**Files Modified**:
+- [add_machine_screen.dart](lib/screens/add_machine_screen.dart) - Added conditional rendering for tire fields
+- [edit_machine_screen.dart](lib/screens/edit_machine_screen.dart) - Added conditional rendering for tire fields
+
+#### Form Layout Enhancements
+**Changes**: Restructured machine form fields for better space efficiency and cleaner UI.
+
+**Paired Field Layout**:
+All related fields combined into 50/50 Row layouts using `Expanded(flex: 1)`:
+- Tire size/pressure (front and rear)
+- Spark plug type/gap
+- Oil type/capacity  
+- Fuel type/tank size
+- Battery voltage/capacity
+
+**Unit Display**:
+Moved units from `labelText` to `suffixText` for cleaner input appearance:
+- Spark plug gap: "mm"
+- Oil capacity: "L"
+- Tire pressure: "PSI"
+- Battery voltage: "V"
+- Battery capacity: "Ah"
+
+**Field Reordering**:
+- Moved odometer inputs above serial number field
+- Added `const Divider()` after serial number for visual separation
+- Improved logical flow and visual hierarchy
+
+**Files Modified**:
+- [add_machine_screen.dart](lib/screens/add_machine_screen.dart) - Updated all field layouts
+- [edit_machine_screen.dart](lib/screens/edit_machine_screen.dart) - Matched layout changes
+
+#### Battery Type/Model Field
+**Feature**: Added new field to track battery model/type specifications.
+
+**Implementation**:
+- Property: `batteryType` (String?, e.g., "HTZ7L", "YTX9-BS")
+- Database: Upgraded to version 9 with migration for batteryType column
+- Forms: New input field with `Icons.battery_full`, text capitalization set to `characters`
+- Detail screen: Displays in battery section before voltage/capacity
+
+**Files Modified**:
+- [machine.dart](lib/models/machine.dart) - Added batteryType property, toMap, fromMap, copyWith
+- [database_service.dart](lib/services/database_service.dart) - Version 9 migration
+- [add_machine_screen.dart](lib/screens/add_machine_screen.dart) - Added batteryType input field
+- [edit_machine_screen.dart](lib/screens/edit_machine_screen.dart) - Added batteryType input with pre-fill
+- [machine_detail_screen.dart](lib/screens/machine_detail_screen.dart) - Added batteryType display
+- [machine_provider.dart](lib/services/machine_provider.dart) - Added batteryType to machine construction
+
+#### Machine Detail Screen Improvements
+**Changes**:
+- Added "L" suffix to oil capacity display
+- Compacted tire display from 4 lines to 2 lines
+- Format: "Front: 205/55 R16 / 32 PSI"
+
+**Files Modified**:
+- [machine_detail_screen.dart](lib/screens/machine_detail_screen.dart)
+
+#### Consistency Verification
+**Completed**: Verified add_machine_screen.dart and edit_machine_screen.dart remain identical:
+- All 21 form fields match between both screens
+- Controllers, validators, hints, icons synchronized
+- Field order consistent across both forms
 
 ### Session: February 2026 - Notification Fixes, UI Improvements, and New Features
 
@@ -586,3 +734,142 @@ Jenkins → Build with Parameters:
 - Pipeline focuses on building and deploying verified code
 - Removed `flutter test` and `flutter analyze` stages from release pipeline
 - Quality checks are developer responsibility before triggering release
+
+### Session: February 2026 - Battery Tracking and UI Refinements
+
+#### Battery Information Tracking
+**Feature**: Added complete battery specification tracking for machines.
+
+**New Machine Properties**:
+- `batteryVoltage`: Optional String field for voltage (e.g., "12", "12.6")
+  - Icon: `Icons.battery_charging_full`
+  - Hint: "e.g., 12, 12.6"
+- `batteryCapacity`: Optional String field for capacity in amp-hours (e.g., "50", "100")
+  - Icon: `Icons.battery_std`
+  - Hint: "e.g., 50, 100"
+
+**Database**: Upgraded to version 8 with migration to add battery columns
+**Files Modified**:
+- `lib/models/machine.dart` - Added batteryVoltage and batteryCapacity to model
+- `lib/services/database_service.dart` - Version 7→8 migration, added battery columns to schema
+- `lib/screens/add_machine_screen.dart` - Added battery voltage/capacity input fields
+- `lib/screens/edit_machine_screen.dart` - Added battery voltage/capacity input fields
+- `lib/services/machine_provider.dart` - Updated copyWith to include battery fields
+- `lib/screens/machine_detail_screen.dart` - Added Battery section displaying voltage (V) and capacity (Ah)
+
+**Display Logic**:
+- Battery section appears between Tires and Other Information sections
+- Only shows when at least one battery field is set (voltage OR capacity)
+- Uses `Icons.battery_charging_full` for section header
+- Formats display: "Voltage: 12 V", "Capacity: 50 Ah"
+
+#### Battery Maintenance Type
+**Feature**: Added battery maintenance tracking capability.
+
+**New Maintenance Type**:
+- `maintenanceTypeBattery` - Icon: `Icons.battery_charging_full`
+- Display name: "Battery"
+- No database migration needed (maintenance types stored as TEXT)
+
+**Files Modified**:
+- `lib/utils/constants.dart` - Added constant and display name
+- `lib/screens/machine_detail_screen.dart` - Added icon case in `_getMaintenanceIcon()`
+
+**Usage**: Users can now log battery maintenance, configure intervals, and track battery maintenance status.
+
+#### Machine Type Tag UI Enhancement
+**Change**: Updated machine type display on home screen cards to have a "tag" appearance.
+
+**Before**: Plain icon with gray color
+**After**: Icon wrapped in Container with:
+- Padding: `horizontal: 6, vertical: 4`
+- Background: `AppTheme.accentBlue` with 15% opacity
+- Border radius: 4px
+- Icon color: `AppTheme.accentBlue` (bright blue)
+- Compact tag-like appearance
+
+**Files Modified**:
+- `lib/widgets/machine_card.dart` - Changed Row layout to include Container wrapper
+
+**Visual Impact**: Machine type icon now stands out as a small colored tag, improving visual hierarchy while maintaining icon-only design.
+
+#### Button Color Standardization
+**Change**: Standardized action button colors across the app for consistency.
+
+**Updated Buttons**:
+1. **"View All" button** on Machine Detail Screen (Maintenance Status section)
+2. **"View All" button** on Machine Detail Screen (Maintenance History section)
+3. **"Edit" button** on Maintenance Intervals Screen
+
+**Before**: Dark blue color (low contrast, hard to see)
+**After**: Bright blue (`AppTheme.accentBlue`) for better visibility and consistency
+
+**Files Modified**:
+- `lib/screens/machine_detail_screen.dart` - Added `foregroundColor: AppTheme.accentBlue` to both View All buttons
+- `lib/screens/maintenance_intervals_screen.dart` - Added `foregroundColor: AppTheme.accentBlue` to Edit button
+
+**Implementation Pattern**:
+```dart
+OutlinedButton.icon(
+  style: OutlinedButton.styleFrom(
+    foregroundColor: AppTheme.accentBlue,
+    // ... other style properties
+  ),
+)
+```
+
+#### Updated Field Order and Properties
+
+**Current Machine Form Field Order** (updated):
+1. Image Picker
+2. Machine Type
+3. Brand (required)
+4. Model (required)
+5. Nickname (optional)
+6. Year (optional)
+7. Serial Number (optional)
+8. Spark Plug Type (optional)
+9. Spark Plug Gap (mm) (optional)
+10. Oil Type (optional)
+11. Oil Capacity (optional)
+12. Fuel Type (optional)
+13. Front Tires Size (optional)
+14. Rear Tires Size (optional)
+15. Front Tire Pressure (PSI) (optional)
+16. Rear Tire Pressure (PSI) (optional)
+17. Battery Voltage (V) (optional)
+18. Battery Capacity (Ah) (optional)
+19. Battery Type/Model (optional)
+20. Tank Size (optional)
+21. Current Odometer (required)
+
+**Machine Detail Screen Sections**:
+- **Oil Information**: Oil Type, Oil Capacity
+- **Spark Plug**: Spark Plug Type, Spark Plug Gap
+- **Tires**: Front/Rear Size, Front/Rear Pressure (with smart label logic)
+- **Battery**: Type/Model, Voltage (V), Capacity (Ah)
+- **Other Information**: Serial Number, Fuel Type
+
+**Complete Machine Properties** (as of database version 9):
+- Basic: type, brand, model, nickname, year, serialNumber
+- Oil: oilType, oilCapacity
+- Spark: sparkPlugType, sparkPlugGap
+- Fuel: fuelType, tankSize
+- Tires: frontTiresSize, rearTiresSize, frontTirePressure, rearTirePressure
+- Battery: batteryVoltage, batteryCapacity, batteryType
+- Other: imagePath, currentOdometer, odometerUnit
+
+**Updated Maintenance Types** (13 total):
+1. Oil Change
+2. Filter Cleaning
+3. Chain Oiling
+4. Brake Fluid
+5. Coolant
+6. Spark Plug
+7. Brake Inspection
+8. General Service
+9. Fuel
+10. Front Tires
+11. Rear Tires
+12. Belts/Chains
+13. Battery ← NEW

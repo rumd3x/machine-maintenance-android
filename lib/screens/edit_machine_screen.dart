@@ -30,9 +30,15 @@ class _EditMachineScreenState extends State<EditMachineScreen> {
   late final TextEditingController _oilTypeController;
   late final TextEditingController _oilCapacityController;
   late final TextEditingController _sparkPlugTypeController;
+  late final TextEditingController _sparkPlugGapController;
   late final TextEditingController _fuelTypeController;
   late final TextEditingController _frontTiresSizeController;
   late final TextEditingController _rearTiresSizeController;
+  late final TextEditingController _frontTirePressureController;
+  late final TextEditingController _rearTirePressureController;
+  late final TextEditingController _batteryVoltageController;
+  late final TextEditingController _batteryCapacityController;
+  late final TextEditingController _batteryTypeController;
   late final TextEditingController _tankSizeController;
   late final TextEditingController _odometerController;
 
@@ -53,9 +59,15 @@ class _EditMachineScreenState extends State<EditMachineScreen> {
     _oilTypeController = TextEditingController(text: widget.machine.oilType ?? '');
     _oilCapacityController = TextEditingController(text: widget.machine.oilCapacity ?? '');
     _sparkPlugTypeController = TextEditingController(text: widget.machine.sparkPlugType ?? '');
+    _sparkPlugGapController = TextEditingController(text: widget.machine.sparkPlugGap ?? '');
     _fuelTypeController = TextEditingController(text: widget.machine.fuelType ?? '');
     _frontTiresSizeController = TextEditingController(text: widget.machine.frontTiresSize ?? '');
     _rearTiresSizeController = TextEditingController(text: widget.machine.rearTiresSize ?? '');
+    _frontTirePressureController = TextEditingController(text: widget.machine.frontTirePressure ?? '');
+    _rearTirePressureController = TextEditingController(text: widget.machine.rearTirePressure ?? '');
+    _batteryVoltageController = TextEditingController(text: widget.machine.batteryVoltage ?? '');
+    _batteryCapacityController = TextEditingController(text: widget.machine.batteryCapacity ?? '');
+    _batteryTypeController = TextEditingController(text: widget.machine.batteryType ?? '');
     _tankSizeController = TextEditingController(
       text: widget.machine.tankSize?.toStringAsFixed(1) ?? '',
     );
@@ -77,9 +89,15 @@ class _EditMachineScreenState extends State<EditMachineScreen> {
     _oilTypeController.dispose();
     _oilCapacityController.dispose();
     _sparkPlugTypeController.dispose();
+    _sparkPlugGapController.dispose();
     _fuelTypeController.dispose();
     _frontTiresSizeController.dispose();
     _rearTiresSizeController.dispose();
+    _frontTirePressureController.dispose();
+    _rearTirePressureController.dispose();
+    _batteryVoltageController.dispose();
+    _batteryCapacityController.dispose();
+    _batteryTypeController.dispose();
     _tankSizeController.dispose();
     _odometerController.dispose();
     super.dispose();
@@ -182,6 +200,9 @@ class _EditMachineScreenState extends State<EditMachineScreen> {
         sparkPlugType: _sparkPlugTypeController.text.trim().isEmpty
             ? null
             : _sparkPlugTypeController.text.trim(),
+        sparkPlugGap: _sparkPlugGapController.text.trim().isEmpty
+            ? null
+            : _sparkPlugGapController.text.trim(),
         oilType: _oilTypeController.text.trim().isEmpty
             ? null
             : _oilTypeController.text.trim(),
@@ -197,6 +218,18 @@ class _EditMachineScreenState extends State<EditMachineScreen> {
         rearTiresSize: _rearTiresSizeController.text.trim().isEmpty
             ? null
             : _rearTiresSizeController.text.trim(),
+        frontTirePressure: _frontTirePressureController.text.trim().isEmpty
+            ? null
+            : _frontTirePressureController.text.trim(),
+        rearTirePressure: _rearTirePressureController.text.trim().isEmpty
+            ? null
+            : _rearTirePressureController.text.trim(),
+        batteryVoltage: _batteryVoltageController.text.trim().isEmpty
+            ? null
+            : _batteryVoltageController.text.trim(),
+        batteryCapacity: _batteryCapacityController.text.trim().isEmpty
+            ? null
+            : _batteryCapacityController.text.trim(),
         tankSize: _tankSizeController.text.trim().isEmpty
             ? null
             : double.tryParse(_tankSizeController.text.trim()),
@@ -342,6 +375,10 @@ class _EditMachineScreenState extends State<EditMachineScreen> {
             ),
             const SizedBox(height: 16),
 
+            // Current Odometer
+            _buildOdometerInput(),
+            const SizedBox(height: 16),
+
             // Serial Number
             TextFormField(
               controller: _serialNumberController,
@@ -353,96 +390,222 @@ class _EditMachineScreenState extends State<EditMachineScreen> {
               textCapitalization: TextCapitalization.characters,
             ),
             const SizedBox(height: 16),
-
-            // Spark Plug Type
-            TextFormField(
-              controller: _sparkPlugTypeController,
-              decoration: const InputDecoration(
-                labelText: 'Spark Plug Type',
-                hintText: 'e.g., NGK CR7HSA',
-                prefixIcon: Icon(Icons.electrical_services),
-              ),
-              textCapitalization: TextCapitalization.characters,
-            ),
+            const Divider(),
             const SizedBox(height: 16),
 
-            // Oil Type
-            TextFormField(
-              controller: _oilTypeController,
-              decoration: const InputDecoration(
-                labelText: 'Oil Type',
-                hintText: 'e.g., 10W-40, 20W-50',
-                prefixIcon: Icon(Icons.water_drop),
-              ),
-              textCapitalization: TextCapitalization.characters,
-            ),
-            const SizedBox(height: 16),
-            
-            // Oil Capacity
-            TextFormField(
-              controller: _oilCapacityController,
-              decoration: const InputDecoration(
-                labelText: 'Oil Capacity',
-                hintText: 'e.g., 1.2L, 4 Liters',
-                prefixIcon: Icon(Icons.water_drop),
-              ),
-              textCapitalization: TextCapitalization.characters,
-            ),
-            const SizedBox(height: 16),
-
-            // Fuel Type
-            TextFormField(
-              controller: _fuelTypeController,
-              decoration: const InputDecoration(
-                labelText: 'Fuel Type',
-                hintText: 'e.g., Gasoline, Diesel, Ethanol',
-                prefixIcon: Icon(Icons.local_gas_station),
-              ),
-              textCapitalization: TextCapitalization.words,
-            ),
-            const SizedBox(height: 16),
-            
-            // Front Tires Size
-            TextFormField(
-              controller: _frontTiresSizeController,
-              decoration: const InputDecoration(
-                labelText: 'Front Tires Size',
-                hintText: 'e.g., 205/55 R16',
-                prefixIcon: Icon(Icons.circle_outlined),
-              ),
-              textCapitalization: TextCapitalization.characters,
-            ),
-            const SizedBox(height: 16),
-            
-            // Rear Tires Size
-            TextFormField(
-              controller: _rearTiresSizeController,
-              decoration: const InputDecoration(
-                labelText: 'Rear Tires Size',
-                hintText: 'e.g., 225/50 R17',
-                prefixIcon: Icon(Icons.circle_outlined),
-              ),
-              textCapitalization: TextCapitalization.characters,
-            ),
-            const SizedBox(height: 16),
-
-            // Tank Size
-            TextFormField(
-              controller: _tankSizeController,
-              decoration: const InputDecoration(
-                labelText: 'Tank Size (Liters)',
-                hintText: 'e.g., 10.0',
-                prefixIcon: Icon(Icons.local_gas_station),
-              ),
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
-              inputFormatters: [
-                FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,2}')),
+            // Spark Plug (Type + Gap)
+            Row(
+              children: [
+                Expanded(
+                  flex: 1,
+                  child: TextFormField(
+                    controller: _sparkPlugTypeController,
+                    decoration: const InputDecoration(
+                      labelText: 'Spark Plug Type',
+                      hintText: 'e.g., NGK CR7HSA',
+                      prefixIcon: Icon(Icons.electrical_services),
+                    ),
+                    textCapitalization: TextCapitalization.characters,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  flex: 1,
+                  child: TextFormField(
+                    controller: _sparkPlugGapController,
+                    decoration: const InputDecoration(
+                      labelText: 'Gap',
+                      hintText: 'e.g., 0.8',
+                      suffixText: 'mm',
+                      prefixIcon: Icon(Icons.straighten),
+                    ),
+                  ),
+                ),
               ],
             ),
             const SizedBox(height: 16),
 
-            // Current Odometer
-            _buildOdometerInput(),
+            // Oil (Type + Capacity)
+            Row(
+              children: [
+                Expanded(
+                  flex: 1,
+                  child: TextFormField(
+                    controller: _oilTypeController,
+                    decoration: const InputDecoration(
+                      labelText: 'Oil Type',
+                      hintText: 'e.g., 10W-40, 20W-50',
+                      prefixIcon: Icon(Icons.water_drop),
+                    ),
+                    textCapitalization: TextCapitalization.characters,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  flex: 1,
+                  child: TextFormField(
+                    controller: _oilCapacityController,
+                    decoration: const InputDecoration(
+                      labelText: 'Capacity',
+                      hintText: 'e.g., 1.2',
+                      suffixText: 'L',
+                      prefixIcon: Icon(Icons.water_drop),
+                    ),
+                    textCapitalization: TextCapitalization.characters,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+
+            // Fuel (Type + Tank Size)
+            Row(
+              children: [
+                Expanded(
+                  flex: 1,
+                  child: TextFormField(
+                    controller: _fuelTypeController,
+                    decoration: const InputDecoration(
+                      labelText: 'Fuel Type',
+                      hintText: 'e.g., Gasoline, Diesel',
+                      prefixIcon: Icon(Icons.local_gas_station),
+                    ),
+                    textCapitalization: TextCapitalization.words,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  flex: 1,
+                  child: TextFormField(
+                    controller: _tankSizeController,
+                    decoration: const InputDecoration(
+                      labelText: 'Tank Size',
+                      hintText: 'e.g., 10',
+                      suffixText: 'L',
+                      prefixIcon: Icon(Icons.local_gas_station),
+                    ),
+                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    inputFormatters: [
+                      FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,2}')),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            
+            // Front Tires (Size + Pressure) - Only for Vehicle/Motorcycle
+            if (_selectedType == machineTypeVehicle || _selectedType == machineTypeMotorcycle) ...[            
+              Row(
+                children: [
+                  Expanded(
+                    flex: 1,
+                    child: TextFormField(
+                      controller: _frontTiresSizeController,
+                      decoration: const InputDecoration(
+                        labelText: 'Front Tires Size',
+                        hintText: 'e.g., 205/55 R16',
+                        prefixIcon: Icon(Icons.circle_outlined),
+                      ),
+                      textCapitalization: TextCapitalization.characters,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    flex: 1,
+                    child: TextFormField(
+                      controller: _frontTirePressureController,
+                      decoration: const InputDecoration(
+                        labelText: 'Pressure',
+                        hintText: 'e.g., 32',
+                        suffixText: 'PSI',
+                        prefixIcon: Icon(Icons.speed),
+                      ),
+                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              
+              // Rear Tires (Size + Pressure)
+              Row(
+                children: [
+                  Expanded(
+                    flex: 1,
+                    child: TextFormField(
+                      controller: _rearTiresSizeController,
+                      decoration: const InputDecoration(
+                        labelText: 'Rear Tires Size',
+                        hintText: 'e.g., 225/50 R17',
+                        prefixIcon: Icon(Icons.circle_outlined),
+                      ),
+                      textCapitalization: TextCapitalization.characters,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    flex: 1,
+                    child: TextFormField(
+                      controller: _rearTirePressureController,
+                      decoration: const InputDecoration(
+                        labelText: 'Pressure',
+                        hintText: 'e.g., 36',
+                        suffixText: 'PSI',
+                        prefixIcon: Icon(Icons.speed),
+                      ),
+                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+            ],
+            
+            // Battery (Voltage + Capacity)
+            Row(
+              children: [
+                Expanded(
+                  flex: 1,
+                  child: TextFormField(
+                    controller: _batteryVoltageController,
+                    decoration: const InputDecoration(
+                      labelText: 'Battery Voltage',
+                      hintText: 'e.g., 12',
+                      suffixText: 'V',
+                      prefixIcon: Icon(Icons.battery_charging_full),
+                    ),
+                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  flex: 1,
+                  child: TextFormField(
+                    controller: _batteryCapacityController,
+                    decoration: const InputDecoration(
+                      labelText: 'Capacity',
+                      hintText: 'e.g., 50',
+                      suffixText: 'Ah',
+                      prefixIcon: Icon(Icons.battery_std),
+                    ),
+                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            
+            // Battery Type/Model
+            TextFormField(
+              controller: _batteryTypeController,
+              decoration: const InputDecoration(
+                labelText: 'Battery Type/Model',
+                hintText: 'e.g., HTZ7L',
+                prefixIcon: Icon(Icons.battery_full),
+              ),
+              textCapitalization: TextCapitalization.characters,
+            ),
             const SizedBox(height: 32),
 
             // Required fields note

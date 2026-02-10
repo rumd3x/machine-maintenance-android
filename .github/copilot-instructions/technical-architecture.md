@@ -1,6 +1,6 @@
 # Technical Architecture
 
-**Date**: 4 de fevereiro de 2026
+**Date**: 9 de fevereiro de 2026
 
 ## Platform
 - **Target**: Android
@@ -45,5 +45,36 @@
 1. Efficient local data persistence
 2. Image handling and compression
 3. Date/time calculations for maintenance intervals
-4. Notifications/reminders system (future consideration)
-5. Data export/backup capability (future consideration)
+4. Notifications/reminders system (✅ Implemented)
+5. Data export/backup capability (✅ Implemented)
+
+## Current Implementation Status
+
+### Database
+- **SQLite Database Version**: 8
+- **Migration Strategy**: Progressive version upgrades with backward compatibility
+- **Tables**: machines, maintenance_records, maintenance_intervals, notifications
+- **Features**: 
+  - Comprehensive machine specifications tracking (20 fields)
+  - Full maintenance history with 13 maintenance types
+  - Configurable maintenance intervals
+  - Notification history with read/unread status
+  - Database backup/restore functionality
+
+### Notifications System
+- **WorkManager**: Background task execution every 6 hours
+- **flutter_local_notifications**: Push notifications on Android
+- **Scheduling**: Exact alarm permissions for precise maintenance reminders
+- **Duplicate Prevention**: Notification sent flag system
+
+### State Management
+- **Pattern**: Provider pattern
+- **Key Providers**: 
+  - MachineProvider - Machine and maintenance CRUD operations
+  - NotificationProvider - Notification history management
+
+### Build & Deployment
+- **Jenkins Pipeline**: Automated releases with version management
+- **Android Signing**: Keystore-based release signing
+- **Play Store**: Optional automated publishing to Google Play
+- **GitHub Releases**: Automated release creation with APK artifacts

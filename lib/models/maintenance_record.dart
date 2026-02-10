@@ -65,8 +65,8 @@ class MaintenanceRecord {
       maintenanceType: maintenanceType ?? this.maintenanceType,
       date: date ?? this.date,
       odometerAtService: odometerAtService ?? this.odometerAtService,
-      fuelAmount: fuelAmount ?? this.fuelAmount,
-      notes: notes ?? this.notes,
+      fuelAmount: fuelAmount,  // Allow clearing to null
+      notes: notes,  // Allow clearing to null
       createdAt: createdAt ?? this.createdAt,
     );
   }

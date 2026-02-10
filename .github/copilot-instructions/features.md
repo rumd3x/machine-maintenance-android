@@ -1,6 +1,6 @@
 # Features and Functionality
 
-**Date**: 5 de fevereiro de 2026
+**Date**: 9 de fevereiro de 2026
 
 ## Core Features
 
@@ -16,16 +16,26 @@ Users can add machines to their personal garage with the following information:
 **Optional Fields:**
 - Machine picture
 - Nickname
+- Year
 - Serial number
-- Spark plug type
-- Oil type
+- Spark plug type (e.g., "NGK CR7HSA")
+- Spark plug gap (e.g., "0.8", "0.7-0.9" mm)
+- Oil type (e.g., "10W-40", "20W-50")
+- Oil capacity (e.g., "1.2L", "4 Liters")
+- Fuel type (e.g., "Gasoline", "Diesel", "Ethanol")
+- Tank size (liters)
+- Front tires size (e.g., "205/55 R16")
+- Rear tires size (e.g., "225/50 R17")
+- Front tire pressure (e.g., "32", "30-32" PSI)
+- Rear tire pressure (e.g., "36", "34-36" PSI)
+- Battery voltage (e.g., "12", "12.6" V)
+- Battery capacity (e.g., "50", "100" Ah)
 - Maintenance interval type:
   - For **vehicles**: km run OR time interval
   - For **machines**: hours run OR time interval
 - Current odometer:
   - For **vehicles**: km
   - For **machines**: hours
-- Tank size
 
 ### 2. Overview Dashboard (Initial Page)
 - Display all machines in the garage
@@ -57,8 +67,15 @@ Based on last maintenance and intervals, show alerts for:
 - Filter cleaning
 - Chain oiling (motorcycles)
 - Brake fluid change
-- Cooling fluid change
-- Other scheduled maintenance items
+- Coolant change
+- Spark plug change
+- Brake inspection
+- General service
+- Fuel
+- Front tires
+- Rear tires
+- Belts/Chains
+- Battery
 
 ### 4. Maintenance Tracking System
 - Calculate when maintenance is due based on:

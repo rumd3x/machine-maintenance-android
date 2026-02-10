@@ -1,6 +1,6 @@
 # UI/UX Design Reference
 
-**Date**: 5 de fevereiro de 2026
+**Date**: 9 de fevereiro de 2026
 
 ## Design Inspiration
 
@@ -24,8 +24,13 @@ Reference screenshot provided showing a dark-themed motorcycle maintenance app.
 ### Machine Card Display
 - Large hero image of the machine
 - Machine name/nickname prominently displayed
-- Machine type displayed as small chip/badge (discrete)
-- Odometer reading next to machine type
+- Machine type displayed as small colored tag with icon
+  - Container with light blue background (15% opacity)
+  - Rounded corners (4px border radius)
+  - Icon-only design in accent blue color
+  - Padding: 6px horizontal, 4px vertical
+  - Positioned next to odometer reading
+- Odometer reading next to machine type tag
 - Machine model/year subtitle
 - Connection status indicator
 - Key metrics displayed:
@@ -98,6 +103,31 @@ Three circular status indicators with icons:
 - Brake Fluid: `Icons.opacity`
 - Coolant: `Icons.ac_unit`
 - Chain Oiling: `Icons.settings`
+
+### Machine Detail Screen
+**Purpose**: Display comprehensive machine information and maintenance status
+
+**Information Sections** (organized logically):
+1. **Oil Information** - Shows oil type and capacity when available
+2. **Spark Plug** - Shows spark plug type and gap when available
+3. **Tires** - Shows tire sizes and pressures
+   - Smart labeling: Shows "Front/Rear" labels when both values exist
+   - Generic labels when only one value exists (assumes same for both)
+4. **Battery** - Shows battery voltage (V) and capacity (Ah) when available
+   - Icon: `Icons.battery_charging_full`
+   - New section added in database version 8
+5. **Other Information** - Serial number, fuel type, etc.
+
+**Action Buttons**:
+- Configuration buttons: Icon-only (cog icon)
+- "View All" buttons: Styled `OutlinedButton.icon` with bright blue color
+- "Edit" buttons: Styled with `AppTheme.accentBlue` foreground color
+- Consistent styling across all action buttons for better UX
+
+**Interactive Status Indicators**:
+- Status circles are tappable/clickable
+- Tapping opens maintenance dialog preselected to that type
+- Improves UX for quick maintenance logging
 - Brake Inspection: `Icons.car_repair`
 - General Service: `Icons.build_circle`
 - Default: `Icons.build`

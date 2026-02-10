@@ -1,8 +1,66 @@
 # Development Progress
 
-**Last Updated**: 2026-02-05
+**Last Updated**: 2026-02-10
 
 ## Recent Updates
+
+### 2026-02-10: Form Layout Improvements and Battery Type Field
+- ✅ **Conditional Field Visibility**
+  - Tire fields (Front/Rear Size and Pressure) now hidden for Generator and Machine types
+  - Only visible for Vehicle and Motorcycle types (matching their actual use case)
+  - Clean conditional rendering using Dart spread operator syntax
+- ✅ **Form Layout Enhancements**
+  - Changed tire size/pressure fields to 50/50 row layout (previously 4 separate fields)
+  - Changed spark plug type/gap to 50/50 row layout
+  - Changed oil type/capacity to 50/50 row layout
+  - Changed fuel type/tank size to 50/50 row layout
+  - Changed battery voltage/capacity to 50/50 row layout
+  - Moved units from labels to suffixText (mm, L, PSI, V, Ah) for cleaner UI
+  - All paired fields now use `Expanded(flex: 1)` for balanced 50/50 splits
+- ✅ **Field Reordering**
+  - Moved odometer inputs above serial number field
+  - Added divider after serial number for visual separation
+  - Improved logical flow of form fields
+- ✅ **Battery Type/Model Field**
+  - Added `batteryType` field to track battery model (e.g., "HTZ7L")
+  - Database upgraded to version 9 with batteryType column migration
+  - Added to add/edit machine forms with `Icons.battery_full` icon
+  - Display in machine detail screen battery section
+  - Text capitalization set to `characters` for typical battery codes
+- ✅ **Machine Detail Screen Improvements**
+  - Added "L" suffix to oil capacity display
+  - Compacted tire display from 4 lines to 2 lines (Size / Pressure format)
+  - Format: "Front: 205/55 R16 / 32 PSI"
+- ✅ **Consistency Verification**
+  - Ensured add_machine_screen.dart and edit_machine_screen.dart remain identical
+  - Verified all 21 form fields match between both screens
+  - All controllers, validators, hints, icons synchronized
+
+### 2026-02-09: Battery Tracking and UI Refinements
+- ✅ **Battery Information Tracking**
+  - Added `batteryVoltage` field (e.g., "12", "12.6" V)
+  - Added `batteryCapacity` field (e.g., "50", "100" Ah)
+  - Database upgraded to version 8
+  - Display section in machine detail screen
+- ✅ **Battery Maintenance Type**
+  - New maintenance type: `maintenanceTypeBattery`
+  - Icon: `Icons.battery_charging_full`
+  - Full tracking capability with intervals and status
+- ✅ **Machine Type Tag UI Enhancement**
+  - Changed home screen machine type display to tag appearance
+  - Container with blue background and rounded corners
+  - Icon-only design with `AppTheme.accentBlue` color
+  - Improved visual hierarchy on machine cards
+- ✅ **Button Color Standardization**
+  - Updated "View All" buttons on Machine Detail Screen
+  - Updated "Edit" button on Maintenance Intervals Screen
+  - Standardized to bright blue (`AppTheme.accentBlue`)
+  - Improved visibility and consistency across app
+- ✅ **Documentation Updates**
+  - Updated copilot-instructions.md with all new features
+  - Updated field order checklist (now 20 fields)
+  - Updated maintenance types list (now 13 types)
+  - Updated machine properties specifications
 
 ### 2026-02-05: CI/CD Pipeline with Automated Releases
 - ✅ Complete Jenkins pipeline for automated releases
@@ -199,7 +257,7 @@
 
 ## Current Status
 **Phase**: Core Features Complete + Production Ready! 🎉
-**Database Version**: 4
+**Database Version**: 8
 **Last Updated**: 5 de fevereiro de 2026
 
 **Major Milestone**: Full-featured maintenance tracker with notifications and data portability!

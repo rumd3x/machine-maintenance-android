@@ -50,17 +50,15 @@ class MachineCard extends StatelessWidget {
                     Row(
                       children: [
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
                           decoration: BoxDecoration(
-                            color: AppTheme.textSecondary.withValues(alpha: 0.2),
+                            color: AppTheme.accentBlue.withValues(alpha: 0.15),
                             borderRadius: BorderRadius.circular(4),
                           ),
-                          child: Text(
-                            machineTypeNames[machine.type] ?? machine.type,
-                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: AppTheme.textSecondary,
-                              fontSize: 10,
-                            ),
+                          child: Icon(
+                            _getMachineTypeIcon(),
+                            size: 14,
+                            color: Colors.white,
                           ),
                         ),
                         const SizedBox(width: 8),

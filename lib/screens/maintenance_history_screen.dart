@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import '../models/machine.dart';
@@ -37,6 +38,20 @@ class _MaintenanceHistoryScreenState extends State<MaintenanceHistoryScreen> {
     );
     
     setState(() => _isLoading = false);
+  }
+
+  Future<void> _editRecord(MaintenanceRecord record) async {
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (context) => _EditMaintenanceDialog(
+        machine: widget.machine,
+        record: record,
+      ),
+    );
+
+    if (result == true) {
+      await _loadRecords();
+    }
   }
 
   Future<void> _deleteRecord(MaintenanceRecord record) async {
@@ -247,11 +262,22 @@ class _MaintenanceHistoryScreenState extends State<MaintenanceHistoryScreen> {
                 ],
               ],
             ),
-            trailing: IconButton(
-              icon: const Icon(Icons.delete_outline),
-              color: Colors.red,
-              onPressed: () => _deleteRecord(record),
-              tooltip: 'Delete',
+            trailing: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                IconButton(
+                  icon: const Icon(Icons.edit_outlined),
+                  color: AppTheme.textAccent,
+                  onPressed: () => _editRecord(record),
+                  tooltip: 'Edit',
+                ),
+                IconButton(
+                  icon: const Icon(Icons.delete_outline),
+                  color: Colors.red,
+                  onPressed: () => _deleteRecord(record),
+                  tooltip: 'Delete',
+                ),
+              ],
             ),
           ),
           if (record.notes != null && record.notes!.isNotEmpty) ...[
@@ -280,5 +306,235 @@ class _MaintenanceHistoryScreenState extends State<MaintenanceHistoryScreen> {
         ],
       ),
     );
+  }
+}
+
+// Dialog for editing maintenance records
+class _EditMaintenanceDialog extends StatefulWidget {
+  final Machine machine;
+  final MaintenanceRecord record;
+
+  const _EditMaintenanceDialog({
+    required this.machine,
+    required this.record,
+  });
+
+  @override
+  State<_EditMaintenanceDialog> createState() => _EditMaintenanceDialogState();
+}
+
+class _EditMaintenanceDialogState extends State<_EditMaintenanceDialog> {
+  late String _selectedType;
+  late TextEditingController _notesController;
+  late TextEditingController _odometerController;
+  late TextEditingController _fuelAmountController;
+  late DateTime _selectedDate;
+  bool _isLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedType = widget.record.maintenanceType;
+    _notesController = TextEditingController(text: widget.record.notes ?? '');
+    _odometerController = TextEditingController(
+      text: widget.record.odometerAtService.toStringAsFixed(1),
+    );
+    _fuelAmountController = TextEditingController(
+      text: widget.record.fuelAmount?.toStringAsFixed(1) ?? '',
+    );
+    _selectedDate = widget.record.date;
+  }
+
+  @override
+  void dispose() {
+    _notesController.dispose();
+    _odometerController.dispose();
+    _fuelAmountController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Edit Maintenance'),
+      content: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Maintenance Type
+            DropdownButtonFormField<String>(
+              value: _selectedType,
+              decoration: const InputDecoration(labelText: 'Maintenance Type'),
+              items: maintenanceTypeNames.entries.map((entry) {
+                return DropdownMenuItem(
+                  value: entry.key,
+                  child: Text(entry.value),
+                );
+              }).toList(),
+              onChanged: (value) {
+                setState(() => _selectedType = value!);
+              },
+            ),
+            const SizedBox(height: 16),
+            
+            // Date Picker
+            InkWell(
+              onTap: _pickDate,
+              child: InputDecorator(
+                decoration: const InputDecoration(
+                  labelText: 'Date',
+                  prefixIcon: Icon(Icons.calendar_today),
+                ),
+                child: Text(
+                  '${_selectedDate.day}/${_selectedDate.month}/${_selectedDate.year}',
+                  style: Theme.of(context).textTheme.bodyLarge,
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            
+            // Odometer Reading
+            TextField(
+              controller: _odometerController,
+              decoration: InputDecoration(
+                labelText: 'Odometer Reading',
+                suffixText: widget.machine.odometerUnit,
+                prefixIcon: const Icon(Icons.speed),
+              ),
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              inputFormatters: [
+                FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,2}')),
+              ],
+            ),
+            const SizedBox(height: 16),
+            
+            // Fuel Amount (only for fuel type)
+            if (_selectedType == maintenanceTypeFuel) ...[
+              TextField(
+                controller: _fuelAmountController,
+                decoration: const InputDecoration(
+                  labelText: 'Fuel Amount (Liters)',
+                  prefixIcon: Icon(Icons.local_gas_station),
+                ),
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                inputFormatters: [
+                  FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,2}')),
+                ],
+              ),
+              const SizedBox(height: 16),
+            ],
+            
+            // Notes
+            TextField(
+              controller: _notesController,
+              decoration: const InputDecoration(
+                labelText: 'Notes (optional)',
+                hintText: 'Add any notes about this service',
+                prefixIcon: Icon(Icons.notes),
+              ),
+              maxLines: 3,
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: _isLoading ? null : () => Navigator.pop(context),
+          child: const Text('Cancel'),
+        ),
+        TextButton(
+          onPressed: _isLoading ? null : _save,
+          child: _isLoading
+              ? const SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : const Text('Save'),
+        ),
+      ],
+    );
+  }
+
+  Future<void> _pickDate() async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: _selectedDate,
+      firstDate: DateTime(2000),
+      lastDate: DateTime.now(),
+    );
+    
+    if (picked != null && picked != _selectedDate) {
+      setState(() {
+        _selectedDate = picked;
+      });
+    }
+  }
+
+  Future<void> _save() async {
+    // Validate odometer reading
+    final odometerValue = double.tryParse(_odometerController.text);
+    if (odometerValue == null || odometerValue < 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please enter a valid odometer reading'),
+          backgroundColor: AppTheme.statusOverdue,
+        ),
+      );
+      return;
+    }
+
+    // Validate fuel amount if fuel type
+    double? fuelAmount;
+    if (_selectedType == maintenanceTypeFuel) {
+      fuelAmount = double.tryParse(_fuelAmountController.text);
+      if (fuelAmount == null || fuelAmount <= 0) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Please enter a valid fuel amount'),
+            backgroundColor: AppTheme.statusOverdue,
+          ),
+        );
+        return;
+      }
+    }
+
+    setState(() => _isLoading = true);
+
+    try {
+      final updatedRecord = widget.record.copyWith(
+        maintenanceType: _selectedType,
+        date: _selectedDate,
+        odometerAtService: odometerValue,
+        fuelAmount: _selectedType == maintenanceTypeFuel ? fuelAmount : null,
+        notes: _notesController.text.isNotEmpty ? _notesController.text : null,
+      );
+      
+      await context.read<MachineProvider>().updateMaintenanceRecord(updatedRecord);
+      
+      if (mounted) {
+        Navigator.pop(context, true);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Maintenance record updated'),
+            backgroundColor: AppTheme.statusOptimal,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: $e'),
+            backgroundColor: AppTheme.statusOverdue,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
   }
 }

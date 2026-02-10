@@ -283,22 +283,99 @@ class _MachineDetailScreenState extends State<MachineDetailScreen> {
               ],
             ),
             
-            if (_machine!.serialNumber != null || _machine!.oilType != null || _machine!.sparkPlugType != null) ...[
+            // Oil Information Section
+            if (_machine!.oilType != null || _machine!.oilCapacity != null) ...[
               const SizedBox(height: 16),
               const Divider(),
               const SizedBox(height: 16),
-              
-              // Additional Details
+              _buildSectionHeader('Oil Information', Icons.water_drop),
+              const SizedBox(height: 12),
+              if (_machine!.oilType != null)
+                _buildDetailRow('Type', _machine!.oilType!),
+              if (_machine!.oilCapacity != null)
+                _buildDetailRow('Capacity', '${_machine!.oilCapacity!} L'),
+            ],
+            
+            // Spark Plug Information Section
+            if (_machine!.sparkPlugType != null || _machine!.sparkPlugGap != null) ...[
+              const SizedBox(height: 16),
+              const Divider(),
+              const SizedBox(height: 16),
+              _buildSectionHeader('Spark Plug', Icons.electrical_services),
+              const SizedBox(height: 12),
+              if (_machine!.sparkPlugType != null)
+                _buildDetailRow('Type', _machine!.sparkPlugType!),
+              if (_machine!.sparkPlugGap != null)
+                _buildDetailRow('Gap', '${_machine!.sparkPlugGap!} mm'),
+            ],
+            
+            // Tires Information Section
+            if (_machine!.frontTiresSize != null || _machine!.rearTiresSize != null || _machine!.frontTirePressure != null || _machine!.rearTirePressure != null) ...[
+              const SizedBox(height: 16),
+              const Divider(),
+              const SizedBox(height: 16),
+              _buildSectionHeader('Tires', Icons.circle_outlined),
+              const SizedBox(height: 12),
+              // Front tires - show size and/or pressure
+              if (_machine!.frontTiresSize != null || _machine!.frontTirePressure != null)
+                _buildDetailRow(
+                  'Front',
+                  '${_machine!.frontTiresSize ?? 'N/A'}${_machine!.frontTirePressure != null ? ' / ${_machine!.frontTirePressure} PSI' : ''}',
+                ),
+              // Rear tires - show size and/or pressure
+              if (_machine!.rearTiresSize != null || _machine!.rearTirePressure != null)
+                _buildDetailRow(
+                  'Rear',
+                  '${_machine!.rearTiresSize ?? 'N/A'}${_machine!.rearTirePressure != null ? ' / ${_machine!.rearTirePressure} PSI' : ''}',
+                ),
+            ],
+            
+            // Battery Information Section
+            if (_machine!.batteryVoltage != null || _machine!.batteryCapacity != null || _machine!.batteryType != null) ...[
+              const SizedBox(height: 16),
+              const Divider(),
+              const SizedBox(height: 16),
+              _buildSectionHeader('Battery', Icons.battery_charging_full),
+              const SizedBox(height: 12),
+              if (_machine!.batteryType != null)
+                _buildDetailRow('Type/Model', _machine!.batteryType!),
+              if (_machine!.batteryVoltage != null)
+                _buildDetailRow('Voltage', '${_machine!.batteryVoltage!} V'),
+              if (_machine!.batteryCapacity != null)
+                _buildDetailRow('Capacity', '${_machine!.batteryCapacity!} Ah'),
+            ],
+            
+            // Other Information Section
+            if (_machine!.serialNumber != null || _machine!.fuelType != null) ...[
+              const SizedBox(height: 16),
+              const Divider(),
+              const SizedBox(height: 16),
+              _buildSectionHeader('Other Information', Icons.info_outline),
+              const SizedBox(height: 12),
               if (_machine!.serialNumber != null)
                 _buildDetailRow('Serial Number', _machine!.serialNumber!),
-              if (_machine!.oilType != null)
-                _buildDetailRow('Oil Type', _machine!.oilType!),
-              if (_machine!.sparkPlugType != null)
-                _buildDetailRow('Spark Plug', _machine!.sparkPlugType!),
+              if (_machine!.fuelType != null)
+                _buildDetailRow('Fuel Type', _machine!.fuelType!),
             ],
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildSectionHeader(String title, IconData icon) {
+    return Row(
+      children: [
+        Icon(icon, size: 18, color: AppTheme.textAccent),
+        const SizedBox(width: 8),
+        Text(
+          title,
+          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+            color: AppTheme.textAccent,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ],
     );
   }
 
@@ -335,7 +412,7 @@ class _MachineDetailScreenState extends State<MachineDetailScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           SizedBox(
-            width: 120,
+            width: 100,
             child: Text(
               label,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
@@ -346,7 +423,9 @@ class _MachineDetailScreenState extends State<MachineDetailScreen> {
           Expanded(
             child: Text(
               value,
-              style: Theme.of(context).textTheme.bodyLarge,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                fontWeight: FontWeight.w500,
+              ),
             ),
           ),
         ],
@@ -377,39 +456,25 @@ class _MachineDetailScreenState extends State<MachineDetailScreen> {
                 'Maintenance Status',
                 style: Theme.of(context).textTheme.displaySmall,
               ),
-              Row(
-                children: [
-                  OutlinedButton.icon(
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => MaintenanceIntervalsScreen(
-                            machine: _machine!,
-                          ),
-                        ),
-                      ).then((_) => _loadData());
-                    },
-                    icon: const Icon(Icons.settings, size: 16),
-                    label: const Text('Configure'),
-                    style: OutlinedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                      minimumSize: Size.zero,
-                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              OutlinedButton.icon(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => MaintenanceIntervalsScreen(
+                        machine: _machine!,
+                      ),
                     ),
-                  ),
-                  const SizedBox(width: 8),
-                  OutlinedButton.icon(
-                    onPressed: _showAllStatuses,
-                    icon: const Icon(Icons.list, size: 16),
-                    label: const Text('View All'),
-                    style: OutlinedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                      minimumSize: Size.zero,
-                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                    ),
-                  ),
-                ],
+                  ).then((_) => _loadData());
+                },
+                icon: const Icon(Icons.settings, size: 16),
+                label: const Text('Configure'),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  minimumSize: Size.zero,
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
               ),
             ],
           ),
@@ -419,7 +484,7 @@ class _MachineDetailScreenState extends State<MachineDetailScreen> {
             children: displayStatuses.map((entry) {
               final label = maintenanceTypeNames[entry.key] ?? entry.key;
               return GestureDetector(
-                onTap: () => _addMaintenance(preselectType: entry.key),
+                onTap: _showAllStatuses,
                 child: StatusIndicator(
                   label: label,
                   status: entry.value.status,
@@ -482,6 +547,10 @@ class _MachineDetailScreenState extends State<MachineDetailScreen> {
                     return Card(
                       margin: const EdgeInsets.only(bottom: 12),
                       child: ListTile(
+                        onTap: () {
+                          Navigator.pop(context);
+                          _addMaintenance(preselectType: entry.key);
+                        },
                         leading: Icon(
                           _getMaintenanceIcon(entry.key),
                           color: _getStatusColor(status.status),
@@ -587,6 +656,7 @@ class _MachineDetailScreenState extends State<MachineDetailScreen> {
                   icon: const Icon(Icons.list, size: 16),
                   label: const Text('View All'),
                   style: OutlinedButton.styleFrom(
+                    foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                     minimumSize: Size.zero,
                     tapTargetSize: MaterialTapTargetSize.shrinkWrap,
@@ -696,6 +766,8 @@ class _MachineDetailScreenState extends State<MachineDetailScreen> {
         return Icons.trip_origin;
       case maintenanceTypeBeltsChains:
         return Icons.settings_input_component;
+      case maintenanceTypeBattery:
+        return Icons.battery_charging_full;
       default:
         return Icons.build;
     }
@@ -861,7 +933,27 @@ class _UpdateOdometerDialogState extends State<_UpdateOdometerDialog> {
 
     try {
       final updatedMachine = widget.machine.copyWith(
+        type: widget.machine.type,
+        brand: widget.machine.brand,
+        model: widget.machine.model,
+        nickname: widget.machine.nickname,
+        year: widget.machine.year,
+        serialNumber: widget.machine.serialNumber,
+        sparkPlugType: widget.machine.sparkPlugType,
+        sparkPlugGap: widget.machine.sparkPlugGap,
+        oilType: widget.machine.oilType,
+        oilCapacity: widget.machine.oilCapacity,
+        fuelType: widget.machine.fuelType,
+        tankSize: widget.machine.tankSize,
+        frontTiresSize: widget.machine.frontTiresSize,
+        rearTiresSize: widget.machine.rearTiresSize,
+        frontTirePressure: widget.machine.frontTirePressure,
+        rearTirePressure: widget.machine.rearTirePressure,
+        batteryVoltage: widget.machine.batteryVoltage,
+        batteryCapacity: widget.machine.batteryCapacity,
+        imagePath: widget.machine.imagePath,
         currentOdometer: value,
+        odometerUnit: widget.machine.odometerUnit,
         updatedAt: DateTime.now(),
       );
       await context.read<MachineProvider>().updateMachine(updatedMachine);
