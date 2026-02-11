@@ -737,6 +737,9 @@ class _AddMachineScreenState extends State<AddMachineScreen> {
         batteryCapacity: _batteryCapacityController.text.trim().isEmpty
             ? null
             : _batteryCapacityController.text.trim(),
+        batteryType: _batteryTypeController.text.trim().isEmpty
+            ? null
+            : _batteryTypeController.text.trim(),
         currentOdometer: double.parse(_odometerController.text.trim()),
         odometerUnit: _odometerUnit,
         tankSize: _tankSizeController.text.trim().isEmpty

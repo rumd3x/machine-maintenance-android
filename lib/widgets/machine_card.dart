@@ -46,6 +46,18 @@ class MachineCard extends StatelessWidget {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
+                    if (_hasNickname()) ...[
+                      const SizedBox(height: 2),
+                      Text(
+                        _getMakeModelYear(),
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: AppTheme.textSecondary,
+                          fontSize: 12,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
                     const SizedBox(height: 4),
                     Row(
                       children: [
@@ -88,6 +100,21 @@ class MachineCard extends StatelessWidget {
       return machine.nickname!;
     }
     
+    final parts = <String>[];
+    if (machine.year != null && machine.year!.isNotEmpty) {
+      parts.add(machine.year!);
+    }
+    parts.add(machine.brand);
+    parts.add(machine.model);
+    
+    return parts.join(' ');
+  }
+
+  bool _hasNickname() {
+    return machine.nickname != null && machine.nickname!.isNotEmpty;
+  }
+
+  String _getMakeModelYear() {
     final parts = <String>[];
     if (machine.year != null && machine.year!.isNotEmpty) {
       parts.add(machine.year!);

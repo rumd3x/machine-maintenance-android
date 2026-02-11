@@ -12,6 +12,12 @@ import 'machine_detail_screen.dart';
 import 'about_screen.dart';
 import 'notification_history_screen.dart';
 
+enum SortOption {
+  status,
+  name,
+  dateAdded,
+}
+
 class HomeScreen extends StatefulWidget {
   const HomeScreen({Key? key}) : super(key: key);
 
@@ -21,6 +27,7 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   final _calculator = MaintenanceCalculator();
+  SortOption _currentSort = SortOption.dateAdded;
 
   @override
   void initState() {
@@ -77,6 +84,10 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                       ],
                     ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.sort),
+                    onPressed: _showSortOptions,
                   ),
                   Consumer<NotificationProvider>(
                     builder: (context, notificationProvider, child) {
@@ -151,18 +162,27 @@ class _HomeScreenState extends State<HomeScreen> {
                     );
                   }
 
-                  return ListView.builder(
-                    padding: const EdgeInsets.only(bottom: 80),
-                    itemCount: provider.machines.length,
-                    itemBuilder: (context, index) {
-                      final machine = provider.machines[index];
-                      
-                      return FutureBuilder(
-                        future: _calculateOverallStatus(provider, machine),
-                        builder: (context, snapshot) {
+                  return FutureBuilder<List<_MachineWithStatus>>(
+                    future: _getSortedMachines(provider),
+                    builder: (context, snapshot) {
+                      if (!snapshot.hasData) {
+                        return const Center(
+                          child: CircularProgressIndicator(),
+                        );
+                      }
+
+                      final sortedMachines = snapshot.data!;
+
+                      return ListView.builder(
+                        padding: const EdgeInsets.only(bottom: 80),
+                        itemCount: sortedMachines.length,
+                        itemBuilder: (context, index) {
+                          final machineWithStatus = sortedMachines[index];
+                          final machine = machineWithStatus.machine;
+                          
                           return MachineCard(
                             machine: machine,
-                            overallStatus: snapshot.data,
+                            overallStatus: machineWithStatus.status,
                             onTap: () {
                               Navigator.push(
                                 context,
@@ -218,4 +238,132 @@ class _HomeScreenState extends State<HomeScreen> {
       return MaintenanceStatusType.optimal;
     }
   }
+
+  Future<List<_MachineWithStatus>> _getSortedMachines(MachineProvider provider) async {
+    // Calculate status for all machines
+    final machinesWithStatus = <_MachineWithStatus>[];
+    
+    for (final machine in provider.machines) {
+      final status = await _calculateOverallStatus(provider, machine);
+      machinesWithStatus.add(_MachineWithStatus(machine, status));
+    }
+
+    // Sort based on current sort option
+    switch (_currentSort) {
+      case SortOption.status:
+        machinesWithStatus.sort((a, b) {
+          // Order: overdue > checkSoon > optimal
+          final aValue = a.status == MaintenanceStatusType.overdue ? 0 : 
+                         a.status == MaintenanceStatusType.checkSoon ? 1 : 2;
+          final bValue = b.status == MaintenanceStatusType.overdue ? 0 :
+                         b.status == MaintenanceStatusType.checkSoon ? 1 : 2;
+          return aValue.compareTo(bValue);
+        });
+        break;
+      case SortOption.name:
+        machinesWithStatus.sort((a, b) {
+          final aName = _getDisplayName(a.machine);
+          final bName = _getDisplayName(b.machine);
+          return aName.toLowerCase().compareTo(bName.toLowerCase());
+        });
+        break;
+      case SortOption.dateAdded:
+        machinesWithStatus.sort((a, b) {
+          return b.machine.createdAt.compareTo(a.machine.createdAt); // Newest first
+        });
+        break;
+    }
+
+    return machinesWithStatus;
+  }
+
+  String _getDisplayName(Machine machine) {
+    if (machine.nickname != null && machine.nickname!.isNotEmpty) {
+      return machine.nickname!;
+    }
+    
+    final parts = <String>[];
+    if (machine.year != null && machine.year!.isNotEmpty) {
+      parts.add(machine.year!);
+    }
+    parts.add(machine.brand);
+    parts.add(machine.model);
+    
+    return parts.join(' ');
+  }
+
+  void _showSortOptions() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: AppTheme.cardBackground,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (context) {
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: Text(
+                  'Sort By',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+              ListTile(
+                leading: const Icon(Icons.warning_amber),
+                title: const Text('Status'),
+                trailing: _currentSort == SortOption.status
+                    ? Icon(Icons.check, color: AppTheme.accentBlue)
+                    : null,
+                onTap: () {
+                  setState(() {
+                    _currentSort = SortOption.status;
+                  });
+                  Navigator.pop(context);
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.sort_by_alpha),
+                title: const Text('Name'),
+                trailing: _currentSort == SortOption.name
+                    ? Icon(Icons.check, color: AppTheme.accentBlue)
+                    : null,
+                onTap: () {
+                  setState(() {
+                    _currentSort = SortOption.name;
+                  });
+                  Navigator.pop(context);
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.calendar_today),
+                title: const Text('Date Added'),
+                trailing: _currentSort == SortOption.dateAdded
+                    ? Icon(Icons.check, color: AppTheme.accentBlue)
+                    : null,
+                onTap: () {
+                  setState(() {
+                    _currentSort = SortOption.dateAdded;
+                  });
+                  Navigator.pop(context);
+                },
+              ),
+              const SizedBox(height: 8),
+            ],
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _MachineWithStatus {
+  final Machine machine;
+  final MaintenanceStatusType status;
+
+  _MachineWithStatus(this.machine, this.status);
 }

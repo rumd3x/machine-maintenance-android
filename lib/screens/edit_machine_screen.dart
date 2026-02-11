@@ -230,6 +230,9 @@ class _EditMachineScreenState extends State<EditMachineScreen> {
         batteryCapacity: _batteryCapacityController.text.trim().isEmpty
             ? null
             : _batteryCapacityController.text.trim(),
+        batteryType: _batteryTypeController.text.trim().isEmpty
+            ? null
+            : _batteryTypeController.text.trim(),
         tankSize: _tankSizeController.text.trim().isEmpty
             ? null
             : double.tryParse(_tankSizeController.text.trim()),
