@@ -1,7 +1,7 @@
 // App version - single source of truth for display purposes
 // Note: pubspec.yaml version is used for build/packaging
-const String appVersion = '0.1.0';
-const int appBuildNumber = 6;
+const String appVersion = '0.1.1';
+const int appBuildNumber = 7;
 
 // Maintenance types
 const String maintenanceTypeOilChange = 'oil_change';
