@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="assets/images/banner.png" alt="Machine Maintenance Banner" width="100%">
+  <img src="assets/images/banner-appstore.png" alt="Machine Maintenance Banner" width="100%">
   
   <h1>Machine Maintenance Tracker</h1>
   <p><strong>Never miss a service again. Keep your machines running smoothly.</strong></p>
@@ -34,15 +34,15 @@ Your vehicles and machines are investments. Whether it's your motorcycle, car, g
 ## 📱 Screenshots
 
 <div align="center">
-  <img src="assets/images/screenshots/Screenshot_20260207_180938.jpg" alt="Home Screen" width="200">
-  <img src="assets/images/screenshots/Screenshot_20260207_180945.jpg" alt="Machine Details" width="200">
-  <img src="assets/images/screenshots/Screenshot_20260207_181018.jpg" alt="Maintenance History" width="200">
+  <img src="assets/images/screenshots/screenshot5.png" width="200">
+  <img src="assets/images/screenshots/screenshot6.png" width="200">
+  <img src="assets/images/screenshots/screenshot2.png" width="200">
 </div>
 
 <div align="center">
-  <img src="assets/images/screenshots/Screenshot_20260207_181029.jpg" alt="Add Machine" width="200">
-  <img src="assets/images/screenshots/Screenshot_20260207_181042.jpg" alt="Maintenance Intervals" width="200">
-  <img src="assets/images/screenshots/Screenshot_20260207_181049.jpg" alt="Notifications" width="200">
+  <img src="assets/images/screenshots/screenshot7.png" width="200">
+  <img src="assets/images/screenshots/screenshot4.png" width="200">
+  <img src="assets/images/screenshots/screenshot3.png" width="200">
 </div>
 
 ---
