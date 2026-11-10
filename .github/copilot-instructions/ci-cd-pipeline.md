@@ -4,7 +4,7 @@
 
 ## Overview
 
-Automated Jenkins CI/CD pipeline for building, versioning, and releasing the Machine Maintenance Android app. The pipeline runs in a containerized Flutter environment using Docker and handles complete release workflow including version management, building, tagging, and GitHub releases.
+Automated Jenkins CI/CD pipeline for building, versioning, and releasing the Machine Maintenance Android app. The pipeline runs in a containerized Flutter environment using Docker and handles complete release workflow including version management, building, tagging, and Forgejo releases.
 
 ### Pipeline Philosophy
 
@@ -13,7 +13,7 @@ Automated Jenkins CI/CD pipeline for building, versioning, and releasing the Mac
 **Pipeline responsibilities**:
 - ✅ Version management (increment and tag)
 - ✅ Building release artifacts (APK and AAB)
-- ✅ Publishing to GitHub and Play Store
+- ✅ Publishing to Forgejo (mirrored to GitHub) and Play Store
 - ✅ Artifact archiving
 
 **Developer responsibilities**:
@@ -77,9 +77,9 @@ Build number is automatically incremented on every build.
 **Description**: Multiline text field for custom release notes
 
 **Usage**:
-- Included in GitHub release description
+- Included in Forgejo release description
 - Used for Play Store "What's new" section
-- Supports markdown formatting for GitHub
+- Supports markdown formatting for Forgejo
 - Automatically formatted for both platforms
 
 **Example**:
@@ -105,7 +105,7 @@ Build number is automatically incremented on every build.
   - Archives both APK and AAB
 - When **disabled** (unchecked):
   - Only builds APK
-  - Only creates GitHub release
+  - Only creates Forgejo release
   - No Play Store interaction
 
 **Safety**: Default is unchecked to prevent accidental publishing during testing.
@@ -279,37 +279,28 @@ stage('Create Git Tag')
 - Creates annotated git tag: `vX.Y.Z`
 - Tag message: `Release X.Y.Z`
 
-### 10. Push to GitHub
+### 10. Push to Forgejo
 ```groovy
-stage('Push to GitHub')
+stage('Push to Forgejo')
 ```
-- Pushes commit to `main` branch
-- Pushes version tag
-- Uses GitHub token (Secret text credential)
-- Format: `https://${GITHUB_TOKEN}@github.com/repo.git`
+- Pushes commit to `main` branch and the version tag
+- Uses a Forgejo access token (Secret text credential `forgejo-credentials`)
+- Format: `https://${FORGEJO_TOKEN}@forgejo.rumd3x.com/rumd3x/machine-maintenance-android.git`
+- Forgejo mirrors to GitHub automatically; always use the canonical repo URL (Forgejo cannot follow a 301 on push)
 
-### 11. Create GitHub Release
+### 11. Create Forgejo Release
 ```groovy
-stage('Create GitHub Release')
+stage('Create Forgejo Release')
 ```
 **Process**:
-1. Creates GitHub release via REST API
-2. Sets release name: `Release X.Y.Z`
-3. Generates release notes with:
-   - Custom release notes (if provided)
-   - Version number
-   - Build number
-   - Release type
-   - CI info
-4. Uploads APK as release asset
-5. Publishes release (not draft)
+1. Creates the release via `POST /api/v1/repos/{repo}/releases` (`Authorization: token`)
+2. Reads the release id from the response (fails the build if missing)
+3. Sets release name `Release X.Y.Z` with custom notes, version, build, release type and CI info
+4. Uploads the APK via `POST .../releases/{id}/assets?name=` (multipart `attachment`)
 
-**Release notes formatting**:
-- Supports markdown for GitHub
-- Includes user-provided `RELEASE_NOTES` parameter
-- Falls back to auto-generated notes if not provided
+The AAB is archived in Jenkins only (not attached to the Forgejo release).
 
-**Release URL**: `https://github.com/{GITHUB_REPO}/releases/tag/{VERSION_TAG}`
+**Release URL**: `https://forgejo.rumd3x.com/rumd3x/machine-maintenance-android/releases/tag/{VERSION_TAG}`
 
 ### 12. Publish to Play Store
 ```groovy
@@ -363,8 +354,10 @@ Update these in `Jenkinsfile`:
 
 ```groovy
 environment {
-    GITHUB_CREDENTIALS_ID = 'github-credentials'  // Jenkins credential ID
-    GITHUB_REPO = 'rumd3x/machine-maintenance-android'  // GitHub repo
+    FORGEJO_CREDENTIALS_ID = 'forgejo-credentials'  // Jenkins credential ID
+    FORGEJO_HOST = 'forgejo.rumd3x.com'
+    FORGEJO_REPO = 'rumd3x/machine-maintenance-android'
+    GIT_BRANCH_NAME = 'main'
     APP_NAME = 'machine-maintenance'  // App name for APK
 }
 ```
@@ -395,24 +388,18 @@ sudo usermod -aG docker jenkins
 sudo systemctl restart jenkins
 ```
 
-### 3. GitHub Credentials
+### 3. Forgejo Credentials
 
-**GitHub Personal Access Token (Required)**
+**Forgejo access token (Required)**
 
-1. Generate token at: https://github.com/settings/tokens
-2. Required scopes:
-   - `repo` (full control)
-   - `write:packages` (optional)
-3. Add to Jenkins:
+1. Forgejo → Settings → Applications → Generate token with `write:repository`
+2. Add to Jenkins:
    ```
    Jenkins → Credentials → Add Credentials
    Kind: Secret text
-   ID: github-credentials
+   ID: forgejo-credentials
    Secret: <your-token>
-   Description: GitHub Token for Machine Maintenance Android
    ```
-
-**Note**: The pipeline uses token-based authentication with the format `https://${GITHUB_TOKEN}@github.com/repo.git`
 
 ### 4. Pipeline Job Setup
 
@@ -425,7 +412,7 @@ Name: machine-maintenance-android-release
 Configure:
 - **Pipeline Definition**: Pipeline script from SCM
 - **SCM**: Git
-- **Repository URL**: Your GitHub repo
+- **Repository URL**: Your Forgejo repo
 - **Branch**: `*/main`
 - **Script Path**: `Jenkinsfile`
 - **Enable**: "This project is parameterized" (parameters auto-detected from Jenkinsfile)
@@ -449,12 +436,12 @@ Configure:
 ✅ Build completed successfully!
 Version: 1.1.0+2
 Tag: v1.1.0
-GitHub Release: https://github.com/rumd3x/machine-maintenance-android/releases/tag/v1.1.0
+Forgejo Release: https://forgejo.rumd3x.com/rumd3x/machine-maintenance-android/releases/tag/v1.1.0
 ```
 
 **Artifacts**:
 - APK available in Jenkins
-- APK available in GitHub release
+- APK available in Forgejo release
 - Git tag pushed to repository
 - Version files updated in repository
 
@@ -470,15 +457,15 @@ sudo usermod -aG docker jenkins
 sudo systemctl restart jenkins
 ```
 
-### GitHub Push Failed
+### Forgejo Push Failed
 
 **Problem**: Authentication failed
 
 **Solutions**:
-- Verify credential ID matches `GITHUB_CREDENTIALS_ID`
-- Check token has `repo` scope
-- Ensure token hasn't expired
-- Test token manually: `git push https://<token>@github.com/<repo>.git`
+- Verify credential ID matches `FORGEJO_CREDENTIALS_ID`
+- Check token has `write:repository` scope and hasn't expired
+- Use the canonical repo URL (no redirects)
+- Test token manually: `git push https://<token>@forgejo.rumd3x.com/<repo>.git`
 
 ### Version Parse Failed
 
@@ -498,14 +485,13 @@ sudo systemctl restart jenkins
 - Verify APK path: `build/app/outputs/flutter-apk/`
 - Ensure `APP_NAME` environment variable is correct
 
-### GitHub Release Creation Failed
+### Forgejo Release Creation Failed
 
-**Problem**: GitHub API returns error
+**Problem**: Forgejo API returns error / "no release id in response"
 
 **Solutions**:
-- Check token has `repo` write access
+- Check token has `write:repository`
 - Verify tag doesn't already exist
-- Check rate limits: https://api.github.com/rate_limit
 - Ensure repo name is correct: `owner/repo`
 
 ## CI/CD Best Practices
@@ -518,7 +504,7 @@ sudo systemctl restart jenkins
 
 ### After Release
 - ✅ Verify APK downloads and installs
-- ✅ Check GitHub release page
+- ✅ Check Forgejo release page
 - ✅ Test app functionality
 - ✅ Update Play Store listing if needed
 
@@ -593,3 +579,11 @@ See [version-management.md](version-management.md) for details.
 ## Version History
 
 - **2026-02-05**: Initial CI/CD pipeline with Docker, versioning, and GitHub releases
+
+
+## Pipeline Improvements (2026-02-11)
+
+- Migrated from GitHub API to Forgejo (`forgejo-credentials`, `FORGEJO_HOST/REPO`, `GIT_BRANCH_NAME`)
+- AAB is archived in Jenkins right after the AAB build (survives a failed publish); the final stage archives only the APK
+- Safer defaults: track choices start with `internal`, status choices start with `draft`
+- New `PUBLISH_STORE_LISTING` boolean (default **false**): syncs the Play listing (`publishListing`) before `publishBundle`. Screenshots are copied from `assets/images/screenshots` (max 8) into the gitignored `phone-screenshots` folder

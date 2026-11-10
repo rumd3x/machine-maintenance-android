@@ -4,6 +4,12 @@
 
 ## Recent Updates
 
+### 2026-02-11: Jenkins pipeline moved to Forgejo + Play listing sync
+- ✅ Jenkinsfile: GitHub API replaced by Forgejo (push, release, APK upload); credential `forgejo-credentials`
+- ✅ AAB archived right after build; safer track/status defaults
+- ✅ New `PUBLISH_STORE_LISTING` param (default off) with listing files in `android/app/src/main/play/` and `scripts/generate_play_assets.py`
+- ✅ `.gitignore`: `release-notes/` and `phone-screenshots/` under the play folder
+
 ### 2026-02-10: Form Layout Improvements and Battery Type Field
 - ✅ **Conditional Field Visibility**
   - Tire fields (Front/Rear Size and Pressure) now hidden for Generator and Machine types

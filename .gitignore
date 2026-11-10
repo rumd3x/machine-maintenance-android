@@ -43,3 +43,7 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Play listing: generated at build time
+android/app/src/main/play/release-notes/
+android/app/src/main/play/listings/*/graphics/phone-screenshots/

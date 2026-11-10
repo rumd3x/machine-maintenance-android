@@ -15,7 +15,12 @@ pipeline {
         text(
             name: 'RELEASE_NOTES',
             defaultValue: '',
-            description: 'Release notes for this version (will be included in GitHub and Play Store releases)'
+            description: 'Release notes for this version (will be included in Forgejo and Play Store releases)'
+        )
+        booleanParam(
+            name: 'PUBLISH_STORE_LISTING',
+            defaultValue: false,
+            description: 'Also sync the Play Store listing (title, descriptions, icon, feature graphic, screenshots from assets/images/screenshots) from the repo. OVERWRITES the current listing text in Play Console. Only used when PUBLISH_TO_PLAY_STORE is enabled'
         )
         booleanParam(
             name: 'PUBLISH_TO_PLAY_STORE',
@@ -24,19 +29,21 @@ pipeline {
         )
         choice(
             name: 'PLAY_STORE_TRACK',
-            choices: ['production', 'beta', 'alpha', 'internal'],
+            choices: ['internal', 'alpha', 'beta', 'production'],
             description: 'Play Store release track (only used when PUBLISH_TO_PLAY_STORE is enabled; internal = safe for testing, production = public release)'
         )
         choice(
             name: 'PLAY_STORE_RELEASE_STATUS',
-            choices: ['completed', 'draft'],
+            choices: ['draft', 'completed'],
             description: 'Release status (draft = requires manual review in Play Console, completed = goes live immediately on selected track). Use DRAFT for apps not yet published.'
         )
     }
     
     environment {
-        GITHUB_CREDENTIALS_ID = 'github-credentials'  // Update with your Jenkins credential ID
-        GITHUB_REPO = 'rumd3x/machine-maintenance-android'  // Update with your GitHub repo
+        FORGEJO_CREDENTIALS_ID = 'forgejo-credentials'  // Jenkins "secret text" credential holding a Forgejo access token (write:repository)
+        FORGEJO_HOST = 'forgejo.rumd3x.com'
+        FORGEJO_REPO = 'rumd3x/machine-maintenance-android'
+        GIT_BRANCH_NAME = 'main'
         APP_NAME = 'machine-maintenance'
         PLAY_STORE_CREDENTIALS_ID = 'play-store-service-account'  // Jenkins credential ID for Play Store JSON key
         ANDROID_KEYSTORE_ID = 'android-upload-keystore'  // Jenkins credential ID for keystore file
@@ -190,6 +197,11 @@ EOF
                     cp app-release.aab ${env.APP_NAME}-${env.NEW_VERSION}-${env.NEW_BUILD_NUMBER}.aab
                     ls -lh *.aab
                 """
+                
+                // Archive right away so the AAB is available even if publishing fails
+                archiveArtifacts artifacts: "build/app/outputs/bundle/release/${env.APP_NAME}-${env.NEW_VERSION}-${env.NEW_BUILD_NUMBER}.aab",
+                                 fingerprint: true,
+                                 allowEmptyArchive: false
             }
         }
         
@@ -219,6 +231,20 @@ EOF
                         
                         // Set environment variables for Gradle
                         def gradleEnv = "PLAY_STORE_TRACK=${track} PLAY_STORE_RELEASE_STATUS=${releaseStatus}"
+                        
+                        if (params.PUBLISH_STORE_LISTING) {
+                            sh '''
+                                SHOTS=android/app/src/main/play/listings/en-US/graphics/phone-screenshots
+                                rm -rf "$SHOTS" && mkdir -p "$SHOTS"
+                                # Play accepts at most 8 phone screenshots, ordered by file name
+                                ls assets/images/screenshots/*.png | sort | head -8 | xargs -I{} cp {} "$SHOTS"/
+                                ls -1 "$SHOTS"
+                            '''
+                            sh """
+                                cd android
+                                ${gradleEnv} ./gradlew publishListing --no-daemon
+                            """
+                        }
                         
                         // Publish to Play Store using Gradle task
                         sh """
@@ -265,27 +291,27 @@ EOF
             }
         }
         
-        stage('Push to GitHub') {
+        stage('Push to Forgejo') {
             steps {
                 script {
-                    echo 'Pushing changes and tags to GitHub...'
+                    echo 'Pushing changes and tags to Forgejo (mirrored to GitHub automatically)...'
                     withCredentials([string(
-                        credentialsId: env.GITHUB_CREDENTIALS_ID,
-                        variable: 'GITHUB_TOKEN'
+                        credentialsId: env.FORGEJO_CREDENTIALS_ID,
+                        variable: 'FORGEJO_TOKEN'
                     )]) {
                         sh """
-                            git push https://${GITHUB_TOKEN}@github.com/${env.GITHUB_REPO}.git HEAD:main
-                            git push https://${GITHUB_TOKEN}@github.com/${env.GITHUB_REPO}.git ${env.VERSION_TAG}
+                            git push https://${FORGEJO_TOKEN}@${env.FORGEJO_HOST}/${env.FORGEJO_REPO}.git HEAD:${env.GIT_BRANCH_NAME}
+                            git push https://${FORGEJO_TOKEN}@${env.FORGEJO_HOST}/${env.FORGEJO_REPO}.git ${env.VERSION_TAG}
                         """
                     }
                 }
             }
         }
         
-        stage('Create GitHub Release') {
+        stage('Create Forgejo Release') {
             steps {
                 script {
-                    echo "Creating GitHub release ${env.VERSION_TAG}..."
+                    echo "Creating Forgejo release ${env.VERSION_TAG}..."
                     
                     // Prepare release notes
                     def releaseBody = "Release ${env.NEW_VERSION}\n\n"
@@ -297,8 +323,8 @@ EOF
                     releaseBody += "_Generated by Jenkins CI_"
                     
                     withCredentials([string(
-                        credentialsId: env.GITHUB_CREDENTIALS_ID,
-                        variable: 'GITHUB_TOKEN'
+                        credentialsId: env.FORGEJO_CREDENTIALS_ID,
+                        variable: 'FORGEJO_TOKEN'
                     )]) {
                         // Write JSON payload to file to avoid escaping issues
                         def releasePayload = groovy.json.JsonOutput.toJson([
@@ -311,36 +337,38 @@ EOF
                         
                         writeFile file: 'release_payload.json', text: releasePayload
                         
-                        // Create release using GitHub API
+                        // Create release using Forgejo API
                         sh '''
-                            curl -X POST \
-                                -H "Authorization: token ${GITHUB_TOKEN}" \
-                                -H "Accept: application/vnd.github.v3+json" \
+                            curl -sS -X POST \
+                                -H "Authorization: token ${FORGEJO_TOKEN}" \
+                                -H "Accept: application/json" \
                                 -H "Content-Type: application/json" \
-                                https://api.github.com/repos/${GITHUB_REPO}/releases \
+                                https://${FORGEJO_HOST}/api/v1/repos/${FORGEJO_REPO}/releases \
                                 -d @release_payload.json > release_response.json
                             
                             cat release_response.json
                         '''
                         
-                        // Extract upload URL and release ID
-                        def uploadUrl = sh(
-                            script: "cat release_response.json | grep -o '\"upload_url\": \"[^\"]*' | cut -d'\"' -f4 | sed 's/{?name,label}//'",
+                        // Extract release ID
+                        def releaseId = sh(
+                            script: "grep -o '\"id\":[0-9]*' release_response.json | head -1 | cut -d: -f2",
                             returnStdout: true
                         ).trim()
                         
-                        echo "Upload URL: ${uploadUrl}"
+                        if (!releaseId) {
+                            error('Could not create Forgejo release (no release id in response)')
+                        }
+                        echo "Release ID: ${releaseId}"
                         
-                        // Upload APK to release
+                        // Upload APK as release attachment
                         sh """
-                            curl -X POST \
-                                -H "Authorization: token ${GITHUB_TOKEN}" \
-                                -H "Content-Type: application/vnd.android.package-archive" \
-                                --data-binary @build/app/outputs/flutter-apk/${env.APP_NAME}-${env.NEW_VERSION}-${env.NEW_BUILD_NUMBER}.apk \
-                                "${uploadUrl}?name=${env.APP_NAME}-${env.NEW_VERSION}-${env.NEW_BUILD_NUMBER}.apk"
+                            curl -sS -X POST \
+                                -H "Authorization: token ${FORGEJO_TOKEN}" \
+                                -F "attachment=@build/app/outputs/flutter-apk/${env.APP_NAME}-${env.NEW_VERSION}-${env.NEW_BUILD_NUMBER}.apk" \
+                                "https://${env.FORGEJO_HOST}/api/v1/repos/${env.FORGEJO_REPO}/releases/${releaseId}/assets?name=${env.APP_NAME}-${env.NEW_VERSION}-${env.NEW_BUILD_NUMBER}.apk"
                         """
                         
-                        echo "✅ GitHub release created: https://github.com/${env.GITHUB_REPO}/releases/tag/${env.VERSION_TAG}"
+                        echo "✅ Forgejo release created: https://${env.FORGEJO_HOST}/${env.FORGEJO_REPO}/releases/tag/${env.VERSION_TAG}"
                     }
                 }
             }
@@ -353,13 +381,6 @@ EOF
                     archiveArtifacts artifacts: "build/app/outputs/flutter-apk/${env.APP_NAME}-${env.NEW_VERSION}-${env.NEW_BUILD_NUMBER}.apk",
                                      fingerprint: true,
                                      allowEmptyArchive: false
-                    
-                    // Archive AAB if it was built
-                    if (params.PUBLISH_TO_PLAY_STORE == true) {
-                        archiveArtifacts artifacts: "build/app/outputs/bundle/release/${env.APP_NAME}-${env.NEW_VERSION}-${env.NEW_BUILD_NUMBER}.aab",
-                                         fingerprint: true,
-                                         allowEmptyArchive: false
-                    }
                 }
             }
         }
@@ -371,7 +392,7 @@ EOF
                 echo "✅ Build completed successfully!"
                 echo "Version: ${env.NEW_VERSION}+${env.NEW_BUILD_NUMBER}"
                 echo "Tag: ${env.VERSION_TAG}"
-                echo "GitHub Release: https://github.com/${env.GITHUB_REPO}/releases/tag/${env.VERSION_TAG}"
+                echo "Forgejo Release: https://${env.FORGEJO_HOST}/${env.FORGEJO_REPO}/releases/tag/${env.VERSION_TAG}"
                 
                 if (params.PUBLISH_TO_PLAY_STORE == true) {
                     def track = params.PLAY_STORE_TRACK ?: 'internal'
