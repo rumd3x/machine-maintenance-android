@@ -5,7 +5,7 @@
 ## Recent Updates
 
 ### 2026-02-11: Jenkins pipeline moved to Forgejo + Play listing sync
-- ✅ Jenkinsfile: GitHub API replaced by Forgejo (push, release, APK upload); credential `forgejo-credentials`
+- ✅ central release pipeline: GitHub API replaced by Forgejo (push, release, APK upload); credential `forgejo-credentials`
 - ✅ AAB archived right after build; safer track/status defaults
 - ✅ New `PUBLISH_STORE_LISTING` param (default off) with listing files in `android/app/src/main/play/` and `scripts/generate_play_assets.py`
 - ✅ `.gitignore`: `release-notes/` and `phone-screenshots/` under the play folder
@@ -82,7 +82,7 @@
   - `appVersion = '1.0.0'`
   - `appBuildNumber = 1`
 - ✅ Updated `about_screen.dart` to use centralized version constant
-- ✅ Created automated version update script: `scripts/update_version.sh`
+- ✅ Created automated version update script: `./gradlew updateVersion` (`android/build.gradle.kts`)
 - ✅ Documented version management workflow
 - ✅ Version synchronized between:
   - `lib/utils/constants.dart` (display in app)
@@ -126,7 +126,7 @@
   - Indexed queries for performance
 
 ### 5. CI/CD
-- ✅ `Jenkinsfile` - Jenkins pipeline configuration
+- ✅ central `release.groovy` (jenkins-app-release repo) - Jenkins pipeline configuration
 - ✅ Automated build, test, and APK generation
 
 ### 6. Theme & UI Foundation

@@ -8,7 +8,7 @@ Automated Jenkins CI/CD pipeline for building, versioning, and releasing the Mac
 
 ### Pipeline Philosophy
 
-**Quality assurance before release**: This pipeline is designed for releasing verified code, not for testing it. All code quality checks (testing, analysis, linting) should be performed locally before triggering a release build.
+**Quality gate**: the pipeline runs `flutter analyze` and `flutter test` before building; also run them locally before triggering a release.
 
 **Pipeline responsibilities**:
 - ✅ Version management (increment and tag)
@@ -22,7 +22,7 @@ Automated Jenkins CI/CD pipeline for building, versioning, and releasing the Mac
 - ✅ Fix all issues before triggering release
 - ✅ Verify app functionality on test devices
 
-This separation keeps the release pipeline fast and focused on deployment, while ensuring quality through local development practices.
+The release pipeline also runs `flutter analyze` and `flutter test`, so keep both green.
 
 ## Pipeline Architecture
 
@@ -217,7 +217,7 @@ Major:   2.0.0+6
 stage('Update Version')
 ```
 - Makes update script executable
-- Runs `./scripts/update_version.sh ${NEW_VERSION} ${NEW_BUILD_NUMBER}`
+- Runs `(cd android && ./gradlew updateVersion -PnewVersion= -PnewBuild=1)${NEW_VERSION} ${NEW_BUILD_NUMBER}`
 - Updates both `pubspec.yaml` and `lib/utils/constants.dart`
 - Verifies changes
 
@@ -229,7 +229,7 @@ stage('Get Dependencies')
 - Downloads all package dependencies
 - Required before building
 
-**Note**: Code analysis and testing are done locally before release. The release pipeline focuses on building and deploying verified code.
+**Note**: The release pipeline runs `flutter analyze` and `flutter test` before building.
 
 ### 6. Build Release APK
 ```groovy
@@ -350,17 +350,7 @@ stage('Archive Artifacts')
 
 ### Required Configuration
 
-Update these in `Jenkinsfile`:
-
-```groovy
-environment {
-    FORGEJO_CREDENTIALS_ID = 'forgejo-credentials'  // Jenkins credential ID
-    FORGEJO_HOST = 'forgejo.rumd3x.com'
-    FORGEJO_REPO = 'rumd3x/machine-maintenance-android'
-    GIT_BRANCH_NAME = 'main'
-    APP_NAME = 'machine-maintenance'  // App name for APK
-}
-```
+The pipeline is generic and lives in the `jenkins-app-release` repo (`release.groovy`). Nothing is configured per app: the repository comes from the `REPO_URL` job parameter, the branch is the repo's default branch and the artifact name comes from the pubspec `name`. The app only needs the `updateVersion` Gradle task and screenshots in `assets/images/screenshots`.
 
 ### Auto-Generated Variables
 
@@ -412,10 +402,9 @@ Name: machine-maintenance-android-release
 Configure:
 - **Pipeline Definition**: Pipeline script from SCM
 - **SCM**: Git
-- **Repository URL**: Your Forgejo repo
-- **Branch**: `*/main`
-- **Script Path**: `Jenkinsfile`
-- **Enable**: "This project is parameterized" (parameters auto-detected from Jenkinsfile)
+- **Repository URL**: the `jenkins-app-release` repo
+- **Script Path**: `release.groovy`
+- **Enable**: "This project is parameterized" (parameters auto-detected from central release pipeline)
 
 ## Usage
 
@@ -483,7 +472,7 @@ sudo systemctl restart jenkins
 **Solution**:
 - Check Flutter build succeeded
 - Verify APK path: `build/app/outputs/flutter-apk/`
-- Ensure `APP_NAME` environment variable is correct
+- Ensure the pubspec `name` is correct (used in artifact names)
 
 ### Forgejo Release Creation Failed
 
@@ -528,7 +517,7 @@ Pipeline fully integrates with centralized version management:
 - `lib/utils/constants.dart` - Display constants
 
 **Script Used**:
-- `scripts/update_version.sh` - Automated version update
+- `./gradlew updateVersion` (`android/build.gradle.kts`) - Automated version update
 
 **Version Format**:
 - Follows semantic versioning: `MAJOR.MINOR.PATCH+BUILD`
@@ -539,7 +528,7 @@ See [version-management.md](version-management.md) for details.
 ## Security Considerations
 
 ### Secrets Management
-- ✅ Never hardcode tokens in Jenkinsfile
+- ✅ Never hardcode tokens in central release pipeline
 - ✅ Use Jenkins credentials store
 - ✅ Tokens are masked in console output
 - ✅ Credentials have limited scope

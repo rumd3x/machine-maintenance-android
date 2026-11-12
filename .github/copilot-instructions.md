@@ -195,7 +195,7 @@ Always import and use constants from `lib/utils/constants.dart`:
 
 To update version:
 ```bash
-./scripts/update_version.sh 1.1.0 2  # version + build number
+(cd android && ./gradlew updateVersion -PnewVersion=1.1.0 -PnewBuild=2)  # version + build number
 ```
 
 This automatically updates both files. See [version-management.md](copilot-instructions/version-management.md) for details.
@@ -659,7 +659,7 @@ Added three new maintenance types:
   - Dynamic track selection via `PLAY_STORE_TRACK` environment variable
   - Enabled App Bundle as default format
 
-- `Jenkinsfile`:
+- central `release.groovy` (jenkins-app-release repo):
   - Added `RELEASE_NOTES` text parameter
   - Added `PUBLISH_TO_PLAY_STORE` boolean parameter
   - Added `PLAY_STORE_TRACK` choice parameter (production/internal/beta/alpha)
@@ -701,7 +701,7 @@ Added three new maintenance types:
   * Copies keystore from Jenkins Secret File credential
   * Creates `key.properties` dynamically with Secret Text credential
   * Both are cleaned up after build (workspace cleanup)
-- Credential IDs hardcoded in Jenkinsfile for consistency
+- Credential IDs hardcoded in central release pipeline for consistency
 
 **Key Features**:
 - **Automatic signing** in Jenkins without storing secrets in repo

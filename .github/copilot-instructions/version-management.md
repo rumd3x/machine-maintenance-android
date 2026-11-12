@@ -40,10 +40,10 @@ Example: `1.2.3+10`
 
 ```bash
 # Update version and build number
-./scripts/update_version.sh 1.1.0 2
+(cd android && ./gradlew updateVersion -PnewVersion=1.1.0 -PnewBuild=2)
 
 # Update version only (build number defaults to 1)
-./scripts/update_version.sh 1.1.0
+(cd android && ./gradlew updateVersion -PnewVersion=1.1.0 -PnewBuild=1)
 ```
 
 The script automatically updates:
@@ -109,7 +109,7 @@ versionName = flutter.versionName
 
 1. **Update version**:
    ```bash
-   ./scripts/update_version.sh 1.1.0 2
+   (cd android && ./gradlew updateVersion -PnewVersion=1.1.0 -PnewBuild=2)
    ```
 
 2. **Commit changes**:
@@ -144,8 +144,7 @@ The version script can be integrated into CI/CD pipelines:
 steps:
   - name: Update Version
     run: |
-      chmod +x scripts/update_version.sh
-      ./scripts/update_version.sh ${{ env.VERSION }} ${{ env.BUILD_NUMBER }}
+      (cd android && ./gradlew updateVersion -PnewVersion=${{ env.VERSION }} -PnewBuild=${{ env.BUILD_NUMBER }})
       
   - name: Build App
     run: flutter build appbundle --release

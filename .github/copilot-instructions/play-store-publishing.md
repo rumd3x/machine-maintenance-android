@@ -18,7 +18,7 @@ Automated Google Play Store publishing via Jenkins. Pipeline builds AAB and publ
 
 ### Safe to Commit:
 - Build configuration (`build.gradle.kts`) - reads from environment variables
-- Jenkinsfile - uses credential IDs, not actual secrets
+- central release pipeline - uses credential IDs, not actual secrets
 - `.gitignore` - blocks sensitive files
 
 ### Secret Flow:
@@ -249,7 +249,7 @@ stage('Publish to Play Store') {
 ## Files Modified
 
 - `android/app/build.gradle.kts` - Added signing config and Gradle Play Publisher
-- `Jenkinsfile` - Added "Setup Android Signing" and "Publish to Play Store" stages
+- central `release.groovy` (jenkins-app-release repo) - Added "Setup Android Signing" and "Publish to Play Store" stages
 - `android/.gitignore` - Already protects `**/*.jks`, `key.properties`, `*service-account*.json`
 
 ## Technical Dependencies

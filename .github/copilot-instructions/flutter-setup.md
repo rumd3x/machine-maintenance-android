@@ -55,7 +55,7 @@ dependencies:
 
 ## Jenkins Build Configuration
 
-### Jenkinsfile
+### central release pipeline
 ```groovy
 pipeline {
     agent any
